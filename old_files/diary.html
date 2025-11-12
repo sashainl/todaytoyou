@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>감정 일기 - 마음의 안식처</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 네비게이션 -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-heart-fill text-primary"></i>
+                <span class="ms-2 fw-bold">마음의 안식처</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">홈</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="chat.html">감정 대화</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="diary.html">감정 일기</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="tarot.html">타로 카드</a>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <button class="theme-toggle" onclick="toggleTheme()" aria-label="테마 전환">
+                            <i class="bi bi-moon-fill" id="themeIcon"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 일기 섹션 -->
+    <section id="diary" class="py-5 bg-gradient-light" style="padding-top: 100px !important;">
+        <div class="container">
+            <!-- 헤더 섹션 -->
+            <div class="text-center mb-5">
+                <div class="diary-header-icon mb-3">
+                    <i class="bi bi-journal-heart"></i>
+                </div>
+                <h2 class="display-4 fw-bold mb-3 text-primary">감정 일기</h2>
+                <p class="lead text-muted mb-0">오늘 하루의 감정을 기록하고 정리해보세요</p>
+                <div class="diary-divider mt-4"></div>
+            </div>
+            
+            <div class="row g-4">
+                <!-- 일기 작성 폼 -->
+                <div class="col-12 col-xl-8">
+                    <div class="diary-form-card">
+                        <div class="card-header-custom">
+                            <div class="d-flex align-items-center">
+                                <div class="form-icon-wrapper">
+                                    <i class="bi bi-pen-fill"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0 fw-bold">오늘의 감정 일기</h4>
+                                    <small class="text-muted">마음 속 이야기를 자유롭게 써보세요</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form id="diaryForm" class="diary-form">
+                            <!-- 날짜와 제목 -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input type="date" class="form-control form-control-custom" id="diaryDate" required>
+                                        <label for="diaryDate">
+                                            <i class="bi bi-calendar3 me-2"></i>날짜
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <input 
+                                            type="text" 
+                                            class="form-control form-control-custom" 
+                                            id="diaryTitle"
+                                            placeholder="오늘 하루를 한 줄로 표현한다면?"
+                                            required
+                                        >
+                                        <label for="diaryTitle">
+                                            <i class="bi bi-chat-quote me-2"></i>제목
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 감정 선택 -->
+                            <div class="mb-4">
+                                <label class="form-label-custom mb-3">
+                                    <i class="bi bi-emoji-smile me-2"></i>
+                                    오늘의 기분은 어떠셨나요?
+                                </label>
+                                <div class="mood-selector-grid">
+                                    <div class="mood-option">
+                                        <input type="radio" class="mood-radio" name="mood" id="mood1" value="매우 좋음" autocomplete="off">
+                                        <label for="mood1" class="mood-label mood-excellent">
+                                            <span class="mood-emoji">😄</span>
+                                            <span class="mood-text">매우 좋음</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="mood-option">
+                                        <input type="radio" class="mood-radio" name="mood" id="mood2" value="좋음" autocomplete="off">
+                                        <label for="mood2" class="mood-label mood-good">
+                                            <span class="mood-emoji">😊</span>
+                                            <span class="mood-text">좋음</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="mood-option">
+                                        <input type="radio" class="mood-radio" name="mood" id="mood3" value="보통" autocomplete="off" checked>
+                                        <label for="mood3" class="mood-label mood-normal">
+                                            <span class="mood-emoji">😐</span>
+                                            <span class="mood-text">보통</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="mood-option">
+                                        <input type="radio" class="mood-radio" name="mood" id="mood4" value="안 좋음" autocomplete="off">
+                                        <label for="mood4" class="mood-label mood-bad">
+                                            <span class="mood-emoji">😔</span>
+                                            <span class="mood-text">안 좋음</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="mood-option">
+                                        <input type="radio" class="mood-radio" name="mood" id="mood5" value="매우 안 좋음" autocomplete="off">
+                                        <label for="mood5" class="mood-label mood-terrible">
+                                            <span class="mood-emoji">😢</span>
+                                            <span class="mood-text">매우 안 좋음</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 일기 내용 -->
+                            <div class="mb-4">
+                                <label class="form-label-custom mb-3">
+                                    <i class="bi bi-heart-fill me-2"></i>
+                                    오늘 하루는 어땠나요?
+                                </label>
+                                <div class="diary-textarea-wrapper">
+                                    <textarea 
+                                        class="form-control form-control-custom diary-textarea" 
+                                        id="diaryContent"
+                                        rows="6"
+                                        placeholder="편하게 당신의 감정을 표현해주세요. 모든 감정은 소중합니다..."
+                                        required
+                                    ></textarea>
+                                    <div class="textarea-footer">
+                                        <div class="security-notice">
+                                            <i class="bi bi-shield-check me-1"></i>
+                                            <small>당신의 일기는 안전하게 보관됩니다</small>
+                                        </div>
+                                        <div class="char-counter">
+                                            <small id="charCount">0 / 500</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 저장 버튼 -->
+                            <div class="diary-submit-wrapper">
+                                <button type="submit" class="btn btn-save-diary">
+                                    <i class="bi bi-bookmark-heart-fill me-2"></i>
+                                    <span>일기 저장하기</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- 사이드바 -->
+                <div class="col-12 col-xl-4">
+                    <div class="diary-sidebar">
+                        <!-- 저장된 일기 -->
+                        <div class="sidebar-card mb-4">
+                            <div class="sidebar-header">
+                                <div class="sidebar-icon">
+                                    <i class="bi bi-journal-bookmark"></i>
+                                </div>
+                                <div>
+                                    <h5 class="sidebar-title">저장된 일기</h5>
+                                    <small class="sidebar-subtitle">지금까지의 기록</small>
+                                </div>
+                            </div>
+                            <div class="sidebar-content" id="diaryList">
+                                <div class="empty-state">
+                                    <div class="empty-icon">
+                                        <i class="bi bi-inbox"></i>
+                                    </div>
+                                    <p class="empty-text">아직 작성된 일기가 없습니다</p>
+                                    <small class="empty-subtext">첫 번째 일기를 작성해보세요</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 감정 통계 -->
+                        <div class="sidebar-card">
+                            <div class="sidebar-header">
+                                <div class="sidebar-icon">
+                                    <i class="bi bi-graph-up"></i>
+                                </div>
+                                <div>
+                                    <h5 class="sidebar-title">감정 통계</h5>
+                                    <small class="sidebar-subtitle">감정 패턴 분석</small>
+                                </div>
+                            </div>
+                            <div class="sidebar-content">
+                                <div id="emotionStats">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">
+                                            <i class="bi bi-bar-chart"></i>
+                                        </div>
+                                        <p class="empty-text">일기를 작성하면</p>
+                                        <small class="empty-subtext">감정 통계가 표시됩니다</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 푸터 -->
+    <footer class="bg-dark text-white py-3 py-md-4 mt-5">
+        <div class="container text-center px-3">
+            <p class="mb-2 fs-6 fs-md-5">
+                <i class="bi bi-heart-fill text-danger me-2"></i>
+                당신의 감정은 소중합니다
+            </p>
+            <small class="text-muted d-block">
+                힘들 때는 주변 사람이나 전문가의 도움을 받으세요
+            </small>
+            <small class="text-muted d-none d-sm-block">
+                자살예방 상담전화: 1393 | 정신건강 위기상담: 1577-0199
+            </small>
+            <small class="text-muted d-block d-sm-none">
+                자살예방: 1393<br>정신건강: 1577-0199
+            </small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Theme JS -->
+    <script src="theme.js"></script>
+    <!-- Custom JS -->
+    <script src="diary.js"></script>
+</body>
+</html>
+

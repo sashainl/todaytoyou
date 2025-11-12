@@ -1,0 +1,17 @@
+# Cloudflare Worker
+.dev.vars
+.wrangler
+dist
+worker-configuration.d.ts
+
+# Dependencies
+node_modules
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+

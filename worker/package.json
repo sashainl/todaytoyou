@@ -1,0 +1,18 @@
+{
+  "name": "emotion-sanctuary-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for Emotion Sanctuary API proxy",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "start": "wrangler dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
+

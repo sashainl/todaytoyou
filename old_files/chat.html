@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>감정 대화 - 마음의 안식처</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 네비게이션 -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-heart-fill text-primary"></i>
+                <span class="ms-2 fw-bold">마음의 안식처</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">홈</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="chat.html">감정 대화</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="diary.html">감정 일기</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="tarot.html">타로 카드</a>
+                    </li>
+                    <li class="nav-item ms-2">
+                        <button class="theme-toggle" onclick="toggleTheme()" aria-label="테마 전환">
+                            <i class="bi bi-moon-fill" id="themeIcon"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 챗봇 섹션 -->
+    <section id="chat" class="py-4 py-md-5 bg-light" style="padding-top: 100px !important;">
+        <div class="container py-3 py-md-5">
+            <div class="text-center mb-4 mb-md-5">
+                <h2 class="display-5 fw-bold mb-2 mb-md-3">감정 대화</h2>
+                <p class="text-muted px-3 px-sm-0">AI 상담사와 편하게 대화하며 마음을 나누세요</p>
+            </div>
+            
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10 col-xl-8">
+                    <div class="card chat-card shadow-lg border-0">
+                        <div class="card-header bg-gradient-primary text-white">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-3">
+                                    <i class="bi bi-robot"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0">감정 상담 AI</h5>
+                                    <small class="opacity-75">
+                                        <i class="bi bi-circle-fill status-dot me-1"></i>언제나 함께합니다
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body chat-messages" id="chatMessages">
+                            <div class="message bot-message">
+                                <div class="message-avatar">
+                                    <i class="bi bi-robot"></i>
+                                </div>
+                                <div class="message-bubble">
+                                    <p class="mb-1">안녕하세요. 오늘 하루는 어떠셨나요? 😊</p>
+                                    <small class="text-muted">지금</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer bg-white">
+                            <div class="typing-indicator mb-2" id="typingIndicator">
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                                <div class="typing-dot"></div>
+                            </div>
+                            <div class="input-group">
+                                <input 
+                                    type="text" 
+                                    class="form-control border-0 py-3" 
+                                    id="chatInput"
+                                    placeholder="마음을 편하게 표현해보세요..."
+                                    autocomplete="off"
+                                >
+                                <button class="btn btn-primary px-4" id="chatSendBtn" onclick="sendChatMessage()">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 감정 퀵 버튼 -->
+                    <div class="emotion-buttons mt-3 mt-md-4">
+                        <p class="text-center text-muted mb-2 mb-md-3">오늘 기분은 어떠신가요?</p>
+                        <div class="d-flex flex-wrap gap-2 justify-content-center px-2 px-sm-0">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="quickEmotion('😊 기뻐요')">😊 기뻐요</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="quickEmotion('😢 슬퍼요')">😢 슬퍼요</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="quickEmotion('😰 불안해요')">😰 불안해요</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="quickEmotion('😡 화나요')">😡 화나요</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="quickEmotion('😴 피곤해요')">😴 피곤해요</button>
+                            <button class="btn btn-outline-secondary btn-sm d-none d-sm-inline-block" onclick="quickEmotion('🤔 복잡해요')">🤔 복잡해요</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 푸터 -->
+    <footer class="bg-dark text-white py-3 py-md-4 mt-5">
+        <div class="container text-center px-3">
+            <p class="mb-2 fs-6 fs-md-5">
+                <i class="bi bi-heart-fill text-danger me-2"></i>
+                당신의 감정은 소중합니다
+            </p>
+            <small class="text-muted d-block">
+                힘들 때는 주변 사람이나 전문가의 도움을 받으세요
+            </small>
+            <small class="text-muted d-none d-sm-block">
+                자살예방 상담전화: 1393 | 정신건강 위기상담: 1577-0199
+            </small>
+            <small class="text-muted d-block d-sm-none">
+                자살예방: 1393<br>정신건강: 1577-0199
+            </small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Theme JS -->
+    <script src="theme.js"></script>
+    <!-- Custom JS -->
+    <script src="chat.js"></script>
+</body>
+</html>
+

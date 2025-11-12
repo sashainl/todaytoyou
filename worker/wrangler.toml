@@ -1,0 +1,13 @@
+name = "emotion-sanctuary-worker"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# 환경 변수 설정 (로컬 개발용)
+# 프로덕션에서는 Cloudflare Dashboard에서 설정
+[env.development.vars]
+# 개발 환경 변수는 .dev.vars 파일에 설정
+
+# 프로덕션 환경 변수는 Cloudflare Dashboard에서 설정하거나
+# wrangler secret put OPENROUTER_API_KEY 명령으로 설정
+# https://developers.cloudflare.com/workers/configuration/environment-variables/
+

@@ -109,6 +109,13 @@ body::before {
 
 .nav-link.active {
     color: var(--primary-color) !important;
+    background-color: #ffffff !important;
+    border-radius: 8px;
+    padding: 6px 12px !important;
+}
+
+[data-theme="dark"] .nav-link.active {
+    background-color: #1a1a1a !important;
 }
 
 /* 다크 모드 토글 버튼 */
@@ -638,7 +645,23 @@ textarea.form-control {
 
 /* Chat 페이지에서 푸터 숨기기 */
 body.chat-page .footer {
-    display: none;
+    display: none !important;
+    visibility: hidden;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    position: absolute !important;
+    opacity: 0 !important;
+}
+
+body.chat-page {
+    background-color: #ffffff !important;
+    background-image: none !important;
+}
+
+body.chat-page::before {
+    display: none !important;
 }
 
 .footer::before {
@@ -1268,6 +1291,7 @@ body.chat-page .footer {
 
 /* 사이드바 */
 .diary-sidebar {
+
     height: fit-content;
     position: sticky;
     top: 100px;
@@ -2335,30 +2359,231 @@ body.chat-page .footer {
 /* ===== 인스타그램 DM 스타일 ===== */
 .instagram-dm-container {
     background: #fafafa;
-    background-image: url('../bgimg/972d6b21a9c2100ec2566922c348d1ea.png');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
     display: flex;
     justify-content: center;
     padding: 0 !important;
     padding-top: 64px; /* 네비게이션 바 높이 + 간격 */
-    min-height: calc(100vh - 64px - 80px); /* 푸터 높이 제외 */
+    min-height: calc(100vh - 64px); /* 푸터 높이 제외 */
     margin-bottom: -30px;
     position: relative;
 }
 
 [data-theme="dark"] .instagram-dm-container {
     background: #1a1a1a;
-    background-image: url('../bgimg/de83e3927c1bdb5e805f3bdc1b07bfe7.png');
+}
+
+/* 레이아웃 컨테이너 */
+.instagram-dm-layout {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    gap: 0;
+}
+
+/* 좌측 사이드바 */
+.chat-sidebar {
+    display: none; /* 모바일에서는 숨김 */
+    width: 360px;
+    min-width: 320px;
+    background: #ffffff;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-right: 1px solid rgba(219, 219, 219, 0.5);
+    height: calc(100vh - 64px - 80px);
+    position: sticky;
+    top: 64px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+[data-theme="dark"] .chat-sidebar {
+    background: #1a1a1a;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-right-color: rgba(38, 38, 38, 0.5);
+}
+
+.chat-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chat-sidebar::-webkit-scrollbar-thumb {
+    background: #dbdbdb;
+    border-radius: 2px;
+}
+
+[data-theme="dark"] .chat-sidebar::-webkit-scrollbar-thumb {
+    background: #404040;
+}
+
+.chat-sidebar-header {
+    margin-top: 18px;
+    padding: 25px;
+    border-bottom: 1px solid rgba(219, 219, 219, 0.5);
+    background: #ffffff;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+[data-theme="dark"] .chat-sidebar-header {
+    background: #1a1a1a;
+    border-bottom-color: rgba(38, 38, 38, 0.5);
+}
+
+.chat-sidebar-header h5 {
+    color: var(--text-color);
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.chat-sidebar-content {
+    
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-section {
+    margin-bottom: 24px;
+}
+
+.sidebar-section:last-child {
+    margin-bottom: 0;
+    margin-top: auto;
+}
+
+.sidebar-section-title {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-section-title i {
+    font-size: 1rem;
+}
+
+/* 캐릭터 선택 리스트 */
+.personality-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.personality-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-left: 3px solid;
+    border-radius: 12px;
+    background: var(--card-bg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+    position: relative;
+}
+
+.personality-item:hover {
+    background: var(--bg-secondary);
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .personality-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.personality-item.active {
+    background: var(--bg-secondary);
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 12px rgba(102, 126, 234, 0.2);
+}
+
+.personality-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+}
+
+.personality-item.active .personality-icon {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+.personality-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.personality-name {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--text-color);
+    margin-bottom: 2px;
+}
+
+.personality-desc {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.check-icon {
+    color: var(--primary-color);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* 대화 기록 빈 상태 */
+.chat-history-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-secondary);
+}
+
+.chat-history-empty i {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    opacity: 0.5;
+}
+
+.chat-history-empty p {
+    font-size: 0.875rem;
+    margin: 0;
+    opacity: 0.7;
 }
 
 .instagram-dm-wrapper {
     width: 100%;
     max-width: 600px;
     height: calc(100vh - 56px - 80px); /* 네비게이션 바 + 푸터 높이 제외 */
-    background: transparent;
+    background: #fafafa;
+    background-image: url('../bgimg/972d6b21a9c2100ec2566922c348d1ea.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     display: flex;
     flex-direction: column;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
@@ -2366,10 +2591,15 @@ body.chat-page .footer {
     border-radius: 0;
     overflow: hidden;
     margin-bottom: 0;
+    flex: 1;
 }
 
 [data-theme="dark"] .instagram-dm-wrapper {
-    background: transparent;
+    background: #1a1a1a;
+    background-image: url('../bgimg/de83e3927c1bdb5e805f3bdc1b07bfe7.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
@@ -2797,12 +3027,45 @@ body.chat-page .footer {
     }
 }
 
+/* 모바일용 캐릭터 선택기 */
+.mobile-personality-selector {
+    display: block;
+}
+
 /* 반응형 - 데스크탑 */
 @media (min-width: 992px) {
+    /* 좌측 사이드바 표시 */
+    .chat-sidebar {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* 모바일용 캐릭터 선택기 숨김 */
+    .mobile-personality-selector {
+        display: none;
+    }
+    
+    /* 레이아웃 컨테이너 조정 */
+    .instagram-dm-layout {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 0 16px;
+    }
+    
     .instagram-dm-container {
         margin-top: 32px; /* 데스크탑에서 더 넓은 간격 */
         min-height: calc(75vh - 40px);
         
+    }
+    
+    body.chat-page .instagram-dm-layout {
+        height: calc(100vh - 32px);
+        max-width: 100%;
+        padding: 0;
+    }
+    
+    body.chat-page .chat-sidebar {
+        height: calc(100vh - 64px);
     }
     
     /* Chat 페이지에서 입력창 하단 고정 - 데스크탑 */
@@ -2887,6 +3150,14 @@ body.chat-page .footer {
         padding-bottom: 0 !important;
     }
     
+    /* 사이드바가 있을 때 입력창 좌측 여백 조정 */
+    body.chat-page .instagram-dm-input-area {
+        left: 360px;
+        width: calc(100% - 320px);
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
     
     .instagram-dm-header {
         top: 25px; /* 데스크탑에서 더 넓은 간격 */

@@ -13,6 +13,7 @@ import {
   Timestamp
 } from 'firebase/firestore'
 import { db } from '../config/firebase'
+import { getEmbedding, findSimilarVectors } from './embeddingService'
 
 // ============ 감정 일기 관련 ============
 
@@ -58,11 +59,11 @@ export async function getDiary(userId, diaryId) {
 }
 
 /**
- * 일기 생성
+ * 일기 생성 (벡터 임베딩 포함)
  */
 export async function createDiary(userId, diaryData) {
   try {
-    const { date, title, mood, content } = diaryData
+    const { date, title, mood, content, includeVector = true } = diaryData
 
     // 유효성 검사
     if (!date || !mood || !content) {
@@ -85,6 +86,17 @@ export async function createDiary(userId, diaryData) {
       mood,
       content,
       createdAt: Timestamp.now()
+    }
+
+    // 벡터 임베딩 생성 (옵션)
+    if (includeVector) {
+      try {
+        const embedding = await getEmbedding(content)
+        newDiary.embedding = embedding
+      } catch (embeddingError) {
+        console.warn('Failed to create embedding for diary, continuing without it:', embeddingError)
+        // 임베딩 실패해도 일기는 저장
+      }
     }
 
     const docRef = await addDoc(diariesRef, newDiary)
@@ -392,6 +404,224 @@ export async function getStatistics(userId, period = 'all') {
     }
   } catch (error) {
     console.error('Error getting statistics:', error)
+    throw error
+  }
+}
+
+// ============ 벡터 검색 관련 ============
+
+/**
+ * 채팅 메시지를 벡터와 함께 저장
+ */
+export async function saveChatMessageWithVector(userId, messageData) {
+  try {
+    const { text, isUser, personality, timestamp, includeVector = true } = messageData
+
+    if (!text || text.trim().length === 0) {
+      throw new Error('Text cannot be empty')
+    }
+
+    const messagesRef = collection(db, 'users', userId, 'chatMessages')
+    const newMessage = {
+      text,
+      isUser,
+      personality: personality || 'calm',
+      timestamp: timestamp || Timestamp.now(),
+      createdAt: Timestamp.now()
+    }
+
+    // 벡터 임베딩 생성 (옵션)
+    if (includeVector) {
+      try {
+        const embedding = await getEmbedding(text)
+        newMessage.embedding = embedding
+      } catch (embeddingError) {
+        console.warn('Failed to create embedding for message, continuing without it:', embeddingError)
+        // 임베딩 실패해도 메시지는 저장
+      }
+    }
+
+    const docRef = await addDoc(messagesRef, newMessage)
+    return {
+      id: docRef.id,
+      ...newMessage
+    }
+  } catch (error) {
+    console.error('Error saving chat message with vector:', error)
+    throw error
+  }
+}
+
+/**
+ * 유사한 메시지 검색 (벡터 유사도 기반)
+ */
+export async function searchSimilarMessages(userId, queryText, options = {}) {
+  try {
+    const {
+      limit: topK = 5,
+      minSimilarity = 0.7,
+      personality = null,
+      includeVector = true
+    } = options
+
+    if (!queryText || queryText.trim().length === 0) {
+      return []
+    }
+
+    // 쿼리 텍스트의 벡터 임베딩 생성
+    let queryEmbedding = null
+    if (includeVector) {
+      try {
+        queryEmbedding = await getEmbedding(queryText)
+      } catch (embeddingError) {
+        console.warn('Failed to create query embedding:', embeddingError)
+        return [] // 임베딩 실패 시 빈 배열 반환
+      }
+    } else {
+      return [] // 벡터 없이는 검색 불가
+    }
+
+    // 메시지 가져오기 (성격 필터링 옵션)
+    const messagesRef = collection(db, 'users', userId, 'chatMessages')
+    let q = query(messagesRef, orderBy('createdAt', 'desc'), limit(100)) // 최근 100개만 검색
+    
+    if (personality) {
+      q = query(messagesRef, where('personality', '==', personality), orderBy('createdAt', 'desc'), limit(100))
+    }
+
+    const snapshot = await getDocs(q)
+    
+    // 벡터가 있는 메시지만 필터링
+    const messagesWithVectors = snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .filter(msg => msg.embedding && Array.isArray(msg.embedding) && msg.embedding.length > 0)
+
+    if (messagesWithVectors.length === 0) {
+      return []
+    }
+
+    // 유사도 계산 및 정렬
+    const results = findSimilarVectors(queryEmbedding, messagesWithVectors, topK, minSimilarity)
+
+    return results
+  } catch (error) {
+    console.error('Error searching similar messages:', error)
+    throw error
+  }
+}
+
+/**
+ * 유사한 일기 검색 (벡터 유사도 기반)
+ */
+export async function searchSimilarDiaries(userId, queryText, options = {}) {
+  try {
+    const {
+      limit: topK = 5,
+      minSimilarity = 0.7,
+      includeVector = true
+    } = options
+
+    if (!queryText || queryText.trim().length === 0) {
+      return []
+    }
+
+    // 쿼리 텍스트의 벡터 임베딩 생성
+    let queryEmbedding = null
+    if (includeVector) {
+      try {
+        queryEmbedding = await getEmbedding(queryText)
+      } catch (embeddingError) {
+        console.warn('Failed to create query embedding:', embeddingError)
+        return []
+      }
+    } else {
+      return []
+    }
+
+    // 모든 일기 가져오기
+    const diariesRef = collection(db, 'users', userId, 'diaries')
+    const q = query(diariesRef, orderBy('createdAt', 'desc'), limit(100))
+    const snapshot = await getDocs(q)
+
+    // 벡터가 있는 일기만 필터링
+    const diariesWithVectors = snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .filter(diary => diary.embedding && Array.isArray(diary.embedding) && diary.embedding.length > 0)
+
+    if (diariesWithVectors.length === 0) {
+      return []
+    }
+
+    // 유사도 계산 및 정렬
+    const results = findSimilarVectors(queryEmbedding, diariesWithVectors, topK, minSimilarity)
+
+    return results
+  } catch (error) {
+    console.error('Error searching similar diaries:', error)
+    throw error
+  }
+}
+
+/**
+ * 사용자의 모든 채팅 메시지 조회 (벡터 포함)
+ */
+export async function getChatMessages(userId, personality = null, limitCount = 50) {
+  try {
+    const messagesRef = collection(db, 'users', userId, 'chatMessages')
+    let q
+    
+    if (personality) {
+      // personality 필터가 있으면 복합 쿼리 사용
+      // 인덱스가 없을 수 있으므로 에러 처리 추가
+      try {
+        q = query(messagesRef, where('personality', '==', personality), orderBy('createdAt', 'desc'), limit(limitCount))
+      } catch (indexError) {
+        // 인덱스 오류 시 personality만 필터링하고 정렬 없이 가져오기
+        console.warn('Index error, fetching without orderBy:', indexError)
+        q = query(messagesRef, where('personality', '==', personality), limit(limitCount))
+      }
+    } else {
+      q = query(messagesRef, orderBy('createdAt', 'desc'), limit(limitCount))
+    }
+
+    const snapshot = await getDocs(q)
+    
+    const messages = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }))
+    
+    console.log(`getChatMessages: Found ${messages.length} messages for personality: ${personality || 'all'}`)
+    
+    return messages
+  } catch (error) {
+    console.error('Error getting chat messages:', error)
+    // 인덱스 오류인 경우 personality 필터 없이 재시도
+    if (error.code === 'failed-precondition' && personality) {
+      console.warn('Retrying without personality filter due to index error')
+      try {
+        const messagesRef = collection(db, 'users', userId, 'chatMessages')
+        const q = query(messagesRef, orderBy('createdAt', 'desc'), limit(limitCount * 2))
+        const snapshot = await getDocs(q)
+        const allMessages = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        // 클라이언트 측에서 personality 필터링
+        const filteredMessages = allMessages.filter(msg => msg.personality === personality)
+        console.log(`getChatMessages: Filtered ${filteredMessages.length} messages for personality: ${personality}`)
+        return filteredMessages
+      } catch (retryError) {
+        console.error('Retry also failed:', retryError)
+        throw error
+      }
+    }
     throw error
   }
 }

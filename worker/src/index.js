@@ -88,6 +88,13 @@ export default {
       })
     }
 
+    const url = new URL(request.url)
+    
+    // 임베딩 엔드포인트 처리
+    if (url.pathname === '/embedding' && request.method === 'POST') {
+      return handleEmbedding(request, env)
+    }
+
     // POST 요청만 허용
     if (request.method !== 'POST') {
       return new Response(
@@ -216,5 +223,107 @@ export default {
       )
     }
   },
+}
+
+/**
+ * 임베딩 요청 처리
+ */
+async function handleEmbedding(request, env) {
+  try {
+    const requestData = await request.json()
+    const { text } = requestData
+
+    if (!text || typeof text !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Text is required' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    // API 키 확인
+    const apiKey = env.OPENROUTER_API_KEY
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: 'API key not configured' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    // 텍스트가 너무 길면 잘라내기
+    const maxLength = 8000
+    const truncatedText = text.length > maxLength ? text.substring(0, maxLength) : text
+
+    // OpenRouter API를 통해 임베딩 생성
+    const openRouterResponse = await fetch('https://openrouter.ai/api/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': request.headers.get('Origin') || 'https://emotion-sanctuary.com',
+        'X-Title': 'Emotion Sanctuary'
+      },
+      body: JSON.stringify({
+        model: 'text-embedding-ada-002',
+        input: truncatedText
+      })
+    })
+
+    if (!openRouterResponse.ok) {
+      const errorData = await openRouterResponse.json().catch(() => ({}))
+      return new Response(
+        JSON.stringify({
+          error: 'Embedding API error',
+          details: errorData
+        }),
+        {
+          status: openRouterResponse.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    const data = await openRouterResponse.json()
+    
+    if (!data.data || !data.data[0] || !data.data[0].embedding) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid embedding response'
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        embedding: data.data[0].embedding,
+        vector: data.data[0].embedding // 호환성을 위해 둘 다 제공
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
+  } catch (error) {
+    console.error('Embedding error:', error)
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        message: error.message
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
+  }
 }
 

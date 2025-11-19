@@ -465,33 +465,6 @@ export default function Chat() {
                   </small>
                 </div>
               </div>
-              {/* 모바일용 성격 선택 드롭다운 */}
-              <div className="d-flex align-items-center gap-2 mobile-personality-selector">
-                <span className="text-muted" style={{ fontSize: '0.875rem' }}>캐릭터 변경</span>
-                <div className="dropdown">
-                  <button 
-                    className="btn btn-sm btn-outline-secondary" 
-                    type="button" 
-                    data-bs-toggle="dropdown"
-                    style={{ borderRadius: '20px' }}
-                  >
-                    <i className="bi bi-three-dots"></i>
-                  </button>
-                  <ul className="dropdown-menu dropdown-menu-end">
-                    {Object.entries(personalities).map(([key, info]) => (
-                      <li key={key}>
-                        <button 
-                          className={`dropdown-item ${selectedPersonality === key ? 'active' : ''}`}
-                          onClick={() => changePersonality(key)}
-                        >
-                          <span className="me-2">{info.icon}</span>
-                          {info.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
             </div>
           </div>
 

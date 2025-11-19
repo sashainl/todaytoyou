@@ -53,9 +53,6 @@ export default function Navbar() {
             <li className="nav-item">
               <Link className={`nav-link ${isActive('/statistics') ? 'active' : ''}`} to="/statistics" onClick={closeNavbar}>통계</Link>
             </li>
-            <li className="nav-item">
-              <Link className={`nav-link ${isActive('/tarot') ? 'active' : ''}`} to="/tarot" onClick={closeNavbar}>타로 카드</Link>
-            </li>
             <li className="nav-item ms-2">
               <button className="theme-toggle" onClick={toggleTheme} aria-label="테마 전환">
                 <i className={`bi ${theme === 'dark' ? 'bi-sun-fill' : 'bi-moon-fill'}`}></i>

@@ -626,6 +626,142 @@ export default function Diary() {
     }, 3000)
   }
 
+  // 1주치 일기 일괄 생성 함수
+  const createWeekDiaries = useCallback(async () => {
+    if (!isAuthenticated || !user) {
+      showToast('로그인이 필요합니다.')
+      return
+    }
+
+    if (!window.confirm('1주치 일기를 생성하시겠습니까? (7개의 일기가 생성됩니다)')) {
+      return
+    }
+
+    setIsLoading(true)
+    
+    const moods = ['매우 좋음', '좋음', '보통', '안 좋음', '매우 안 좋음']
+    const sampleContents = [
+      '오늘은 날씨가 좋아서 기분이 좋았다. 산책을 하면서 마음이 편안해졌다. 하루 종일 긍정적인 에너지가 느껴졌다.',
+      '친구들과 만나서 즐거운 시간을 보냈다. 오랜만에 웃음이 많았고, 좋은 대화를 나눌 수 있어서 행복했다.',
+      '평범한 하루였다. 특별한 일은 없었지만 무난하게 하루를 보냈다. 조용하고 평화로운 하루였다.',
+      '오늘은 조금 피곤했다. 일이 많아서 힘들었지만 잘 해결했다. 휴식이 필요하다고 느꼈다.',
+      '스트레스가 많았던 하루였다. 하지만 끝까지 포기하지 않고 잘 해결했다. 자신이 자랑스럽다.',
+      '새로운 도전을 시작했다. 설레고 기대되는 마음이다. 앞으로가 기대된다.',
+      '가족과 함께 시간을 보냈다. 따뜻한 하루였고, 소중한 사람들과 함께 있어서 행복했다.'
+    ]
+
+    const today = new Date()
+    let successCount = 0
+    let failCount = 0
+
+    try {
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(today)
+        date.setDate(date.getDate() - i) // 오늘부터 과거로
+
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const dateString = `${year}-${month}-${day}`
+
+        const randomMood = moods[Math.floor(Math.random() * moods.length)]
+        const content = sampleContents[i] || sampleContents[Math.floor(Math.random() * sampleContents.length)]
+
+        try {
+          // AI에게 위로 메시지 받기
+          const prompt = `오늘 기분이 "${randomMood}"이고, 이런 일기를 썼어:
+
+"${content}"
+
+위 일기 내용을 바탕으로 사용자에게 따뜻하고 공감적인 위로 메시지를 작성해주세요. 일기의 전체 내용을 고려하여 구체적이고 진심 어린 위로를 해주세요. 필요하다면 간단한 조언이나 격려도 포함해주세요. 음악 추천은 선택사항이며, 위로 메시지가 주가 되어야 합니다. 자연스럽게 대화하듯이 말해줘.`
+          
+          let aiComfort = null
+          try {
+            console.log(`AI 위로 메시지 요청 중 (${dateString})...`)
+            aiComfort = await getAIResponse(prompt, selectedPersonality)
+            console.log(`AI 위로 메시지 받음 (${dateString}):`, aiComfort ? aiComfort.substring(0, 50) + '...' : 'null')
+          } catch (error) {
+            console.error(`AI 추천 실패 (${dateString}):`, error)
+            // AI 응답 실패해도 일기는 저장
+          }
+
+          // 일기 저장 (AI 위로 메시지 포함)
+          const newDiary = await createDiary(user.uid, {
+            date: dateString,
+            title: '',
+            mood: randomMood,
+            content: content,
+            aiComfort: aiComfort, // AI 위로 메시지 저장
+            personality: selectedPersonality,
+            includeVector: true // 임베딩은 생성
+          })
+
+          successCount++
+          console.log(`✅ ${dateString} 일기 생성 완료`)
+        } catch (error) {
+          failCount++
+          console.error(`❌ ${dateString} 일기 생성 실패:`, error)
+        }
+
+        // API 호출 제한을 피하기 위해 약간의 딜레이 (AI 응답 시간 고려)
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+
+      // 일기 목록 다시 불러오기
+      if (user) {
+        const userDiaries = await getDiaries(user.uid)
+        const formattedDiaries = userDiaries.map(diary => {
+          let dateStr = diary.date
+          
+          if (!dateStr && diary.createdAt) {
+            const createdAtDate = diary.createdAt?.toDate 
+              ? diary.createdAt.toDate() 
+              : (diary.createdAt instanceof Date 
+                ? diary.createdAt 
+                : new Date(diary.createdAt))
+            
+            const year = createdAtDate.getFullYear()
+            const month = String(createdAtDate.getMonth() + 1).padStart(2, '0')
+            const day = String(createdAtDate.getDate()).padStart(2, '0')
+            dateStr = `${year}-${month}-${day}`
+          }
+          
+          if (!dateStr) {
+            const today = new Date()
+            const year = today.getFullYear()
+            const month = String(today.getMonth() + 1).padStart(2, '0')
+            const day = String(today.getDate()).padStart(2, '0')
+            dateStr = `${year}-${month}-${day}`
+          }
+          
+          return {
+            ...diary,
+            date: dateStr,
+            aiComfort: diary.aiComfort || null,
+            createdAt: diary.createdAt?.toDate 
+              ? diary.createdAt.toDate().toISOString() 
+              : (diary.createdAt instanceof Date 
+                ? diary.createdAt.toISOString() 
+                : diary.createdAt)
+          }
+        })
+        setDiaries(formattedDiaries)
+      }
+
+      if (successCount > 0) {
+        showToast(`✅ ${successCount}개의 일기가 생성되었습니다!`)
+      }
+      if (failCount > 0) {
+        showToast(`⚠️ ${failCount}개의 일기 생성에 실패했습니다.`)
+      }
+    } catch (error) {
+      console.error('일기 일괄 생성 실패:', error)
+      showToast('일기 생성 중 오류가 발생했습니다.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [isAuthenticated, user, selectedPersonality])
+
 
   return (
     <section id="diary" className="py-5 bg-gradient-light theme-section diary-section" style={{ paddingTop: '120px' }}>
@@ -806,7 +942,30 @@ export default function Diary() {
                       <p className="empty-text">로그인이 필요합니다</p>
                       <small className="empty-subtext">일기를 작성하려면 로그인해주세요</small>
                     </div>
-                  ) : isLoadingDiaries ? (
+                  ) : (
+                    <div className="mb-3">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary w-100"
+                        onClick={createWeekDiaries}
+                        disabled={isLoading}
+                        style={{ fontSize: '0.85rem' }}
+                      >
+                        {isLoading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                            생성 중...
+                          </>
+                        ) : (
+                          <>
+                            <i className="bi bi-magic me-2"></i>
+                            1주치 일기 생성 (테스트용)
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                  {!isAuthenticated ? null : isLoadingDiaries ? (
                     <div className="text-center py-4">
                       <div className="spinner-border text-primary" role="status">
                         <span className="visually-hidden">Loading...</span>

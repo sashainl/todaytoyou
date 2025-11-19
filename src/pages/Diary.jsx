@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { getDiaries, createDiary, updateDiary, deleteDiary as deleteDiaryFromFirestore } from '../services/firestoreService'
@@ -292,7 +292,7 @@ export default function Diary() {
     modal.show()
   }
 
-  const deleteDiary = async (id) => {
+  const deleteDiary = useCallback(async (id) => {
     if (!window.confirm('정말 이 일기를 삭제하시겠습니까?')) {
       return
     }
@@ -304,19 +304,19 @@ export default function Diary() {
     
     try {
       await deleteDiaryFromFirestore(user.uid, id)
-      setDiaries(diaries.filter(d => d.id !== id))
-      const modal = window.bootstrap.Modal.getInstance(document.getElementById('diaryModal'))
+      setDiaries(prev => prev.filter(d => d.id !== id))
+      const modal = window.bootstrap?.Modal?.getInstance(document.getElementById('diaryModal'))
       if (modal) modal.hide()
       showToast('일기가 삭제되었습니다.')
     } catch (error) {
       console.error('일기 삭제 실패:', error)
       showToast('일기 삭제에 실패했습니다.')
     }
-  }
+  }, [isAuthenticated, user])
 
-  const editDiary = async (diaryId) => {
+  const editDiary = useCallback(async (diaryId) => {
     // 기존 모달 닫기
-    const existingModal = window.bootstrap.Modal.getInstance(document.getElementById('diaryModal'))
+    const existingModal = window.bootstrap?.Modal?.getInstance(document.getElementById('diaryModal'))
     if (existingModal) {
       existingModal.hide()
     }
@@ -330,9 +330,22 @@ export default function Diary() {
     
     // 수정 모달 표시
     showEditDiaryModal(diary)
+  }, [diaries])
+
+  // HTML 이스케이프 함수
+  const escapeHtml = (text) => {
+    if (!text) return ''
+    const div = document.createElement('div')
+    div.textContent = text
+    return div.innerHTML
   }
 
   const showEditDiaryModal = (diary) => {
+    // HTML 이스케이프 처리
+    const escapedContent = escapeHtml(diary.content || '')
+    const escapedDate = escapeHtml(diary.date || '')
+    const escapedId = escapeHtml(diary.id || '')
+    
     const modalHTML = `
       <div class="modal fade" id="editDiaryModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -345,7 +358,7 @@ export default function Diary() {
             </div>
             <form id="editDiaryForm">
               <div class="modal-body">
-                <input type="hidden" id="editDiaryId" value="${diary.id}">
+                <input type="hidden" id="editDiaryId" value="${escapedId}">
                 
                 <!-- 날짜 선택 -->
                 <div class="mb-4">
@@ -354,7 +367,7 @@ export default function Diary() {
                     type="date" 
                     class="form-control" 
                     id="editDiaryDate" 
-                    value="${diary.date}"
+                    value="${escapedDate}"
                     required
                   />
                 </div>
@@ -363,23 +376,27 @@ export default function Diary() {
                 <div class="mb-4">
                   <label class="form-label fw-bold">오늘의 기분</label>
                   <div class="mood-selector-grid">
-                    ${Object.keys(moodEmojis).map(mood => `
+                    ${Object.keys(moodEmojis).map(mood => {
+                      const escapedMood = escapeHtml(mood)
+                      const moodClass = mood === '매우 좋음' ? 'excellent' : mood === '좋음' ? 'good' : mood === '보통' ? 'normal' : mood === '안 좋음' ? 'bad' : 'terrible'
+                      return `
                       <div class="mood-option">
                         <input 
                           type="radio" 
                           class="mood-radio" 
                           name="editMood" 
-                          id="editMood-${mood}"
-                          value="${mood}"
+                          id="editMood-${escapedMood}"
+                          value="${escapedMood}"
                           ${diary.mood === mood ? 'checked' : ''}
                           required
                         />
-                        <label htmlFor="editMood-${mood}" class="mood-label mood-${mood === '매우 좋음' ? 'excellent' : mood === '좋음' ? 'good' : mood === '보통' ? 'normal' : mood === '안 좋음' ? 'bad' : 'terrible'}">
+                        <label htmlFor="editMood-${escapedMood}" class="mood-label mood-${moodClass}">
                           <span class="mood-emoji">${moodEmojis[mood]}</span>
-                          <span class="mood-text">${mood}</span>
+                          <span class="mood-text">${escapedMood}</span>
                         </label>
                       </div>
-                    `).join('')}
+                    `
+                    }).join('')}
                   </div>
                 </div>
                 
@@ -392,10 +409,10 @@ export default function Diary() {
                     rows="6"
                     maxlength="500"
                     required
-                  >${diary.content}</textarea>
+                  >${escapedContent}</textarea>
                   <div class="d-flex justify-content-between mt-2">
                     <small class="text-muted">최대 500자</small>
-                    <small id="editCharCount" class="text-muted">${diary.content.length} / 500</small>
+                    <small id="editCharCount" class="text-muted">${(diary.content || '').length} / 500</small>
                   </div>
                 </div>
               </div>
@@ -417,8 +434,16 @@ export default function Diary() {
     }
     
     document.body.insertAdjacentHTML('beforeend', modalHTML)
-    const modal = new window.bootstrap.Modal(document.getElementById('editDiaryModal'))
-    modal.show()
+    
+    // Bootstrap 모달 초기화
+    if (window.bootstrap && window.bootstrap.Modal) {
+      const modal = new window.bootstrap.Modal(document.getElementById('editDiaryModal'))
+      modal.show()
+    } else {
+      console.error('Bootstrap Modal is not available')
+      showToast('모달을 열 수 없습니다.')
+      return
+    }
     
     // 문자 수 카운터
     const contentTextarea = document.getElementById('editDiaryContent')
@@ -539,13 +564,19 @@ export default function Diary() {
   }
 
   useEffect(() => {
-    window.deleteDiary = deleteDiary
-    window.editDiary = editDiary
-    return () => {
-      delete window.deleteDiary
-      delete window.editDiary
+    // window 객체에 함수 등록
+    if (typeof window !== 'undefined') {
+      window.deleteDiary = deleteDiary
+      window.editDiary = editDiary
     }
-  })
+    return () => {
+      // 정리 함수
+      if (typeof window !== 'undefined') {
+        delete window.deleteDiary
+        delete window.editDiary
+      }
+    }
+  }, [deleteDiary, editDiary])
 
   const formatDate = (dateString) => {
     // "YYYY-MM-DD" 형식인 경우 직접 파싱 (타임존 문제 방지)

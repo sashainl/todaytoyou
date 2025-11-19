@@ -34,7 +34,7 @@ export default function Navbar() {
       <div className="container">
         <Link className="navbar-brand" to="/">
           <i className="bi bi-heart-fill text-primary"></i>
-          <span className="ms-2 fw-bold">마음의 안식처</span>
+          <span className="ms-2 fw-bold">오늘의 너에게</span>
         </Link>
         <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span className="navbar-toggler-icon"></span>

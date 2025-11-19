@@ -1,335 +1,140 @@
-# 데이터베이스 정의서 (Database Schema)
+# Firestore 데이터베이스 구조
 
-## 프로젝트 개요
-- **프로젝트명**: Emotion Sanctuary (감정 안식처)
-- **저장 방식**: 브라우저 LocalStorage
-- **데이터 형식**: JSON
-- **프레임워크**: React + Vite
+## 전체 구조
 
----
-
-## 테이블 구조
-
-### 1. 감정 일기 (emotionDiaries)
-
-#### 테이블 정보
-- **LocalStorage Key**: `emotionDiaries`
-- **데이터 타입**: Array
-- **설명**: 사용자가 작성한 감정 일기 데이터를 저장
-
-#### 필드 정의
-
-| 필드명 | 데이터 타입 | 제약조건 | 설명 | 예시 |
-|--------|------------|---------|------|------|
-| `id` | Number | PRIMARY KEY, NOT NULL, UNIQUE | 일기 고유 식별자 (타임스탬프 기반) | `1704067200000` |
-| `date` | String | NOT NULL | 일기 작성 날짜 (YYYY-MM-DD 형식) | `"2024-01-01"` |
-| `title` | String | NOT NULL | 일기 제목 | `"오늘 하루"` |
-| `mood` | String | NOT NULL, ENUM | 오늘의 기분 | `"매우 좋음"`, `"좋음"`, `"보통"`, `"안 좋음"`, `"매우 안 좋음"` |
-| `content` | String | NOT NULL, MAX 500자 | 일기 내용 | `"오늘은 정말 좋은 하루였다..."` |
-| `createdAt` | String | NOT NULL | 생성 일시 (ISO 8601 형식) | `"2024-01-01T12:00:00.000Z"` |
-
-#### 데이터 예시
-```json
-[
-  {
-    "id": 1704067200000,
-    "date": "2024-01-01",
-    "title": "새해 첫 날",
-    "mood": "좋음",
-    "content": "오늘은 정말 좋은 하루였다. 새로운 시작에 설렌다.",
-    "createdAt": "2024-01-01T12:00:00.000Z"
-  }
-]
 ```
-
-#### 기분(Mood) Enum 값
-- `"매우 좋음"` (점수: 5)
-- `"좋음"` (점수: 4)
-- `"보통"` (점수: 3)
-- `"안 좋음"` (점수: 2)
-- `"매우 안 좋음"` (점수: 1)
-
----
-
-### 2. 타로 기록 (tarotHistory)
-
-#### 테이블 정보
-- **LocalStorage Key**: `tarotHistory`
-- **데이터 타입**: Array
-- **설명**: 사용자가 뽑은 타로 카드 기록을 저장 (최대 10개 유지)
-
-#### 필드 정의
-
-| 필드명 | 데이터 타입 | 제약조건 | 설명 | 예시 |
-|--------|------------|---------|------|------|
-| `id` | Number | PRIMARY KEY, NOT NULL, UNIQUE | 기록 고유 식별자 (타임스탬프 기반) | `1704067200000` |
-| `question` | String | NOT NULL | 사용자 질문 | `"나의 연애운은?"` |
-| `cards` | Array | NOT NULL, LENGTH 3 | 선택된 카드 3장 | `[{...}, {...}, {...}]` |
-| `mode` | String | NOT NULL, ENUM | 스프레드 방식 | `"past-present-future"`, `"situation-advice-outcome"` |
-| `topic` | String | NOT NULL, ENUM | 주제 카테고리 | `"love"`, `"money"`, `"study"`, `"career"`, `"health"`, `"general"` |
-| `date` | String | NOT NULL | 기록 생성 일시 (ISO 8601 형식) | `"2024-01-01T12:00:00.000Z"` |
-
-#### cards 배열 내부 구조
-
-| 필드명 | 데이터 타입 | 제약조건 | 설명 | 예시 |
-|--------|------------|---------|------|------|
-| `index` | Number | NOT NULL | 카드 덱 내 인덱스 | `5` |
-| `card` | Object | NOT NULL | 타로 카드 정보 | `{id, name, icon, keywords, upright, reversed}` |
-| `reversed` | Boolean | NOT NULL | 역방향 여부 | `true`, `false` |
-
-#### card 객체 구조
-
-| 필드명 | 데이터 타입 | 제약조건 | 설명 | 예시 |
-|--------|------------|---------|------|------|
-| `id` | Number | NOT NULL | 카드 ID (0-21) | `0` |
-| `name` | String | NOT NULL | 카드 이름 | `"광대 (The Fool)"` |
-| `icon` | String | NOT NULL | 카드 이모지 | `"🃏"` |
-| `keywords` | String | NOT NULL | 카드 키워드 | `"새로운 시작, 순수함, 자유, 모험"` |
-| `upright` | String | NOT NULL | 정방향 해석 | `"새로운 시작과 무한한 가능성을 상징합니다..."` |
-| `reversed` | String | NOT NULL | 역방향 해석 | `"무모함, 경솔한 결정을 경계하세요..."` |
-
-#### 데이터 예시
-```json
-[
-  {
-    "id": 1704067200000,
-    "question": "나의 연애운은?",
-    "cards": [
-      {
-        "index": 5,
-        "card": {
-          "id": 6,
-          "name": "연인 (The Lovers)",
-          "icon": "💕",
-          "keywords": "사랑, 선택, 조화, 관계",
-          "upright": "사랑과 조화로운 관계가 형성됩니다...",
-          "reversed": "불화나 잘못된 선택을 조심하세요..."
-        },
-        "reversed": false
-      }
-    ],
-    "mode": "past-present-future",
-    "topic": "love",
-    "date": "2024-01-01T12:00:00.000Z"
-  }
-]
-```
-
-#### 스프레드 모드(Mode) Enum 값
-- `"past-present-future"`: 과거 / 현재 / 미래
-- `"situation-advice-outcome"`: 상황 / 조언 / 결과
-
-#### 주제(Topic) Enum 값
-- `"love"`: 연애운 💝
-- `"money"`: 재물운 💰
-- `"study"`: 학업운 📚
-- `"career"`: 직업운 💼
-- `"health"`: 건강운 🏥
-- `"general"`: 종합운 🌟
-
----
-
-### 3. 채팅 메시지 (Chat Messages)
-
-#### 테이블 정보
-- **LocalStorage Key**: 없음 (메모리 내 저장)
-- **데이터 타입**: Array (컴포넌트 state)
-- **설명**: AI 채팅 메시지 목록 (페이지 새로고침 시 초기화)
-
-#### 필드 정의
-
-| 필드명 | 데이터 타입 | 제약조건 | 설명 | 예시 |
-|--------|------------|---------|------|------|
-| `id` | Number | PRIMARY KEY, NOT NULL, UNIQUE | 메시지 고유 식별자 | `1704067200000` |
-| `text` | String | NOT NULL | 메시지 내용 | `"안녕하세요! 오늘 기분은 어떠세요?"` |
-| `isUser` | Boolean | NOT NULL | 사용자 메시지 여부 | `true`, `false` |
-| `time` | String | NOT NULL | 메시지 시간 (HH:MM 형식) | `"14:30"` |
-
-#### 데이터 예시
-```json
-[
-  {
-    "id": 1704067200000,
-    "text": "안녕하세요! 오늘 기분은 어떠세요?",
-    "isUser": false,
-    "time": "14:30"
-  },
-  {
-    "id": 1704067201000,
-    "text": "오늘 기분이 좀 안 좋아요",
-    "isUser": true,
-    "time": "14:31"
-  }
-]
+users/
+  └── {userId}/
+      ├── diaries/          # 일기 컬렉션
+      ├── chatMessages/     # 채팅 메시지 컬렉션
+      └── tarotHistory/     # 타로 기록 컬렉션
 ```
 
 ---
 
-## 통계 데이터 (Statistics)
+## 1. 일기 컬렉션 (`users/{userId}/diaries`)
 
-### 개요
-- **저장 방식**: 계산된 데이터 (별도 저장 없음)
-- **데이터 소스**: `emotionDiaries` 배열
-- **기간 필터**: 전체, 최근 7일, 최근 30일
+### 문서 구조
+```javascript
+{
+  id: string,                    // 문서 ID (자동 생성)
+  date: string,                  // 날짜 (YYYY-MM-DD 형식)
+  title: string,                 // 제목 (기본값: '')
+  mood: string,                  // 기분 ('매우 좋음', '좋음', '보통', '안 좋음', '매우 안 좋음')
+  content: string,               // 일기 내용 (최대 500자)
+  personality: string,           // 캐릭터 정보 ('energetic', 'logical', 'calm') - 최근 추가됨
+  aiComfort: string,             // AI 위로 메시지 (임베딩 없이 저장)
+  embedding: number[],           // 벡터 임베딩 (일기 내용만 임베딩, AI 위로는 제외)
+  createdAt: Timestamp          // 생성 시간
+}
+```
 
-### 계산 항목
+### 주요 함수
+- `getDiaries(userId, personality?)` - 일기 조회 (캐릭터별 필터링 가능)
+- `getDiary(userId, diaryId)` - 특정 일기 조회
+- `createDiary(userId, diaryData)` - 일기 생성
+- `updateDiary(userId, diaryId, updates)` - 일기 수정
+- `deleteDiary(userId, diaryId)` - 일기 삭제
+- `searchSimilarDiaries(userId, queryText, options)` - 유사한 일기 검색 (벡터 기반)
 
-#### 1. 감정 통계 (Mood Statistics)
-- **기간별 감정 분포**: 각 기분별 개수 및 비율
-- **가장 많은 기분**: 빈도가 가장 높은 기분
-- **평균 감정 점수**: 1-5점 척도의 평균값
-
-#### 2. 감정 추이 (Mood Trend)
-- **최근 7일 감정 추이**: 날짜별 평균 감정 점수
-- **작성 빈도**: 최근 30일간 일일 작성 횟수
-
-#### 3. 감정 인사이트 (Mood Insights)
-- **긍정 비율**: "매우 좋음" + "좋음" 비율
-- **중립 비율**: "보통" 비율
-- **부정 비율**: "안 좋음" + "매우 안 좋음" 비율
-
----
-
-## 외부 데이터 구조
-
-### 1. 타로 카드 마스터 데이터 (tarotCards)
-
-#### 테이블 정보
-- **파일 위치**: `src/data/tarotCards.js`
-- **데이터 타입**: Array (정적 데이터)
-- **총 카드 수**: 22장 (메이저 아르카나)
-
-#### 구조
-각 카드는 위의 `card 객체 구조`와 동일합니다.
-
-### 2. 주제 정보 (topicInfo)
-
-#### 테이블 정보
-- **파일 위치**: `src/data/tarotCards.js`
-- **데이터 타입**: Object
-
-#### 필드 정의
-
-| 필드명 | 데이터 타입 | 설명 | 예시 |
-|--------|------------|------|------|
-| `name` | String | 주제 이름 | `"연애운"` |
-| `icon` | String | 주제 아이콘 | `"💝"` |
-| `placeholder` | String | 입력 필드 플레이스홀더 | `"예: 나의 연애운은 어떨까요?"` |
-| `hint` | String | 도움말 텍스트 | `"현재의 연애 상황이나..."` |
-| `defaultQuestion` | String | 기본 질문 | `"나의 연애운은?"` |
+### 인덱스 필요
+- `personality` + `createdAt` 복합 인덱스 (캐릭터별 일기 조회용)
 
 ---
 
-## 인덱스 및 제약조건
+## 2. 채팅 메시지 컬렉션 (`users/{userId}/chatMessages`)
 
-### Primary Key
-- `emotionDiaries.id`: 일기 고유 식별자
-- `tarotHistory.id`: 타로 기록 고유 식별자
+### 문서 구조
+```javascript
+{
+  id: string,                    // 문서 ID (자동 생성)
+  text: string,                  // 메시지 내용
+  isUser: boolean,               // 사용자 메시지 여부 (true: 사용자, false: AI)
+  personality: string,           // 캐릭터 정보 ('energetic', 'logical', 'calm')
+  embedding: number[],           // 벡터 임베딩 (사용자 메시지만, AI 응답은 제외)
+  timestamp: Timestamp,          // 메시지 시간
+  createdAt: Timestamp           // 생성 시간
+}
+```
 
-### 제약조건
-- `emotionDiaries.content`: 최대 500자
-- `tarotHistory.cards`: 정확히 3개의 카드
-- `emotionDiaries.mood`: Enum 값만 허용
-- `tarotHistory.mode`: Enum 값만 허용
-- `tarotHistory.topic`: Enum 값만 허용
+### 주요 함수
+- `getChatMessages(userId, personality?, limit?)` - 채팅 메시지 조회 (캐릭터별 필터링 가능)
+- `saveChatMessageWithVector(userId, messageData)` - 메시지 저장 (임베딩 옵션)
+- `searchSimilarMessages(userId, queryText, options)` - 유사한 메시지 검색 (벡터 기반)
 
-### 데이터 보관 정책
-- `tarotHistory`: 최대 10개 유지 (가장 최근 기록)
-- `emotionDiaries`: 모든 기록 보관 (제한 없음)
-- `Chat Messages`: 메모리 내 저장 (페이지 새로고침 시 초기화)
-
----
-
-## API 연동 데이터
-
-### OpenRouter API
-
-#### 요청 데이터
-- **엔드포인트**: `https://openrouter.ai/api/v1/chat/completions`
-- **모델**: `google/gemma-2-9b-it:free`
-- **요청 형식**: JSON
-- **헤더**: Authorization Bearer Token
-
-#### 응답 데이터
-- **형식**: JSON
-- **필드**: `choices[0].message.content` (String)
-
-#### 사용 시나리오
-1. **감정 일기 저장 시**: 일기 내용 기반 위로 메시지 및 음악 추천
-2. **채팅**: 실시간 대화 응답
-3. **타로 해석**: 선택된 카드 기반 종합 해석
+### 인덱스 필요
+- `personality` + `createdAt` 복합 인덱스 (캐릭터별 메시지 조회용)
 
 ---
 
-## 데이터 무결성 규칙
+## 3. 타로 기록 컬렉션 (`users/{userId}/tarotHistory`)
 
-### 1. 일기 데이터 (emotionDiaries)
-- `id`는 고유해야 함 (중복 불가)
-- `date`는 유효한 날짜 형식이어야 함
-- `content`는 500자를 초과할 수 없음
-- `mood`는 허용된 Enum 값이어야 함
+### 문서 구조
+```javascript
+{
+  id: string,                    // 문서 ID (자동 생성)
+  question: string,              // 질문
+  cards: Array<{                 // 선택된 카드들
+    cardId: number,              // 카드 ID
+    reversed: boolean            // 역방향 여부
+  }>,
+  mode: string,                  // 타로 모드
+  topic: string,                 // 주제
+  date: Timestamp,               // 날짜
+  createdAt: Timestamp           // 생성 시간
+}
+```
 
-### 2. 타로 기록 (tarotHistory)
-- `cards` 배열은 정확히 3개의 요소를 가져야 함
-- `mode`는 허용된 Enum 값이어야 함
-- `topic`는 허용된 Enum 값이어야 함
-- 최대 10개까지만 저장 (초과 시 가장 오래된 기록 삭제)
-
-### 3. 채팅 메시지
-- `isUser`는 boolean 값이어야 함
-- `time`은 "HH:MM" 형식이어야 함
-
----
-
-## 데이터 마이그레이션 및 백업
-
-### 현재 구현
-- **백업**: LocalStorage에 JSON 형식으로 저장 (브라우저 자동 관리)
-- **마이그레이션**: 구현되지 않음
-- **데이터 내보내기**: 구현되지 않음
-- **데이터 가져오기**: 구현되지 않음
-
-### 권장 사항
-1. 데이터 내보내기 기능 (JSON 파일 다운로드)
-2. 데이터 가져오기 기능 (JSON 파일 업로드)
-3. 버전 관리 및 마이그레이션 스크립트
-4. 클라우드 백업 연동 (선택사항)
+### 주요 함수
+- `getTarotHistory(userId)` - 타로 기록 조회 (최근 10개)
+- `createTarotRecord(userId, tarotData)` - 타로 기록 생성
+- `deleteTarotRecord(userId, recordId)` - 타로 기록 삭제
 
 ---
 
-## 보안 고려사항
+## 중요 사항
 
-### 현재 상태
-- **데이터 저장 위치**: 클라이언트 측 LocalStorage
-- **암호화**: 없음
-- **인증**: 없음
-- **데이터 공유**: 없음
+### 1. 캐릭터별 데이터 분리
+- **일기**: `personality` 필드로 캐릭터별 구분
+- **채팅**: `personality` 필드로 캐릭터별 구분
+- 대화 시 해당 캐릭터의 데이터만 사용
 
-### 개인정보 보호
-- 모든 데이터는 사용자의 브라우저에만 저장됨
-- 서버로 전송되지 않음
-- OpenRouter API 호출 시 일기 내용 일부만 전송 (최대 100자)
+### 2. 벡터 임베딩
+- **일기**: `content`만 임베딩, `aiComfort`는 임베딩하지 않음
+- **채팅**: 사용자 메시지만 임베딩, AI 응답은 임베딩하지 않음
+- 벡터 검색을 통한 유사한 내용 찾기
 
----
+### 3. 인덱스 설정 필요
+Firestore 콘솔에서 다음 복합 인덱스를 생성해야 합니다:
 
-## 참고사항
+1. **일기 컬렉션**:
+   - Collection: `users/{userId}/diaries`
+   - Fields: `personality` (Ascending), `createdAt` (Descending)
 
-### 기술 스택
-- **프론트엔드**: React 18.2.0
-- **빌드 도구**: Vite 5.0.8
-- **라우팅**: React Router DOM 6.20.0
-- **UI 프레임워크**: Bootstrap 5.3.0
+2. **채팅 메시지 컬렉션**:
+   - Collection: `users/{userId}/chatMessages`
+   - Fields: `personality` (Ascending), `createdAt` (Descending)
 
-### LocalStorage 사용법
-- `useLocalStorage` 커스텀 훅 사용
-- 자동 JSON 직렬화/역직렬화
-- 실시간 동기화 (React state와 연동)
-
-### 데이터 형식
-- 모든 날짜는 ISO 8601 형식 사용
-- 모든 배열은 시간 역순으로 정렬 (최신순)
-- ID는 `Date.now()`를 사용하여 생성
+### 4. 기존 데이터 마이그레이션
+- 기존 일기 중 `personality` 필드가 없는 경우가 있을 수 있음
+- 이 경우 `getDiaries`에서 클라이언트 측 필터링으로 처리
+- 새로 작성하는 일기는 자동으로 `personality` 필드가 저장됨
 
 ---
 
+## 데이터 흐름
 
+### 일기 작성
+1. 사용자가 일기 작성 (캐릭터 선택)
+2. AI 위로 메시지 생성
+3. 일기 내용 임베딩 생성
+4. Firestore에 저장 (`personality` 포함)
+
+### 대화
+1. 사용자 메시지 전송
+2. 해당 캐릭터의 최근 30개 메시지 수집
+3. 해당 캐릭터의 최근 10개 일기 수집
+4. 벡터 검색으로 유사한 과거 메시지 찾기
+5. AI 응답 생성 (1-2문장, 해당 캐릭터의 대화와 일기만 참조)
+6. 사용자 메시지는 임베딩과 함께 저장
+7. AI 응답은 임베딩 없이 저장

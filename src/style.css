@@ -2421,6 +2421,7 @@ body.chat-page::before {
 .chat-sidebar-header {
     margin-top: 18px;
     padding: 25px;
+    padding-bottom: 16px;
     border-bottom: 1px solid rgba(219, 219, 219, 0.5);
     background: #ffffff;
     backdrop-filter: blur(10px);
@@ -2440,6 +2441,12 @@ body.chat-page::before {
     font-weight: 600;
     font-size: 1.25rem;
     margin: 0;
+    margin-bottom: 16px;
+}
+
+.sidebar-section-top {
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .chat-sidebar-content {
@@ -2854,6 +2861,9 @@ body.chat-page::before {
     bottom: 0;
     z-index: 10;
     margin: 0;
+    /* 메시지 창과 좌우 패딩 일치 */
+    padding-left: 16px;
+    padding-right: 16px;
 }
 
 [data-theme="dark"] .instagram-dm-input-area {
@@ -2869,8 +2879,10 @@ body.chat-page::before {
     gap: 8px;
     background: #efefef;
     border-radius: 22px;
-    padding: 8px 12px;
+    padding: 8px 16px;
     margin-bottom: 4px;
+    width: 100%;
+    min-width: 0;
 }
 
 [data-theme="dark"] .instagram-input-wrapper {
@@ -2885,6 +2897,8 @@ body.chat-page::before {
     font-size: 0.9375rem;
     color: var(--text-color);
     padding: 0;
+    min-width: 0;
+    width: 100%;
 }
 
 .instagram-input::placeholder {
@@ -2988,12 +3002,24 @@ body.chat-page::before {
         right: 0;
         width: 100%;
         z-index: 1000;
-        padding: 32px 16px 0 16px !important;
+        /* 메시지 창과 좌우 패딩 일치 - 오른쪽 패딩 줄여서 공간 확보 */
+        padding: 32px 24px 0 16px !important;
+        margin: 0 !important;
         margin-bottom: 0 !important;
+        box-sizing: border-box;
+    }
+    
+    body.chat-page .instagram-dm-messages {
+        padding-left: 24px !important;
+        padding-right: 16px !important;
+        box-sizing: border-box;
     }
     
     body.chat-page .instagram-input-wrapper {
         margin-bottom: 0 !important;
+        width: 100%;
+        padding: 8px 12px 8px 16px;
+        box-sizing: border-box;
     }
     
     body.chat-page .instagram-quick-emotions {
@@ -3110,8 +3136,8 @@ body.chat-page::before {
         overflow-y: auto;
         min-height: 0;
         padding-bottom: 90px; /* 입력창 높이만큼 하단 패딩 추가 */
-        padding-left: 32px;
-        padding-right: 32px;
+        padding-left: 32px !important;
+        padding-right: 32px !important;
         width: 100%;
     }
     
@@ -3121,9 +3147,10 @@ body.chat-page::before {
         left: 0;
         right: 0;
         width: 100%;
-        max-width: 100%;
+        max-width: none;
         flex-shrink: 0;
         margin: 0;
+        /* 메시지 창과 좌우 패딩 일치 (32px) */
         padding: 8px 32px 8px 32px !important;
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
@@ -3143,6 +3170,8 @@ body.chat-page::before {
     
     body.chat-page .instagram-input-wrapper {
         margin-bottom: 4px !important;
+        width: 100%;
+        padding: 10px 20px;
     }
     
     body.chat-page .instagram-quick-emotions {
@@ -3153,10 +3182,13 @@ body.chat-page::before {
     /* 사이드바가 있을 때 입력창 좌측 여백 조정 */
     body.chat-page .instagram-dm-input-area {
         left: 360px;
-        width: calc(100% - 320px);
-        max-width: 1200px;
-        margin-left: auto;
-        margin-right: auto;
+        width: calc(100% - 360px);
+        max-width: none;
+        margin-left: 0;
+        margin-right: 0;
+        /* 사이드바가 있을 때도 메시지 창과 패딩 일치 */
+        padding-left: 32px !important;
+        padding-right: 32px !important;
     }
     
     .instagram-dm-header {
@@ -3176,7 +3208,6 @@ body.chat-page::before {
     .instagram-dm-input-area {
         padding-left: 32px;
         padding-right: 32px;
-        
     }
 
     .instagram-dm-messages {
@@ -3189,7 +3220,101 @@ body.chat-page::before {
     }
 
     .instagram-input-wrapper {
-        padding: 12px 20px;
-        
+        padding: 12px 24px;
+        width: 100%;
+    }
+}
+
+/* 반응형 - 태블릿 (768px ~ 991px) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    body.chat-page .instagram-dm-messages {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+    
+    body.chat-page .instagram-dm-input-area {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+    
+    body.chat-page .instagram-dm-header {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+/* 반응형 - 중간 크기 데스크탑 (992px ~ 1199px) */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    body.chat-page .instagram-dm-messages {
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+    
+    body.chat-page .instagram-dm-input-area {
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+    
+    body.chat-page .instagram-dm-header {
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+    
+    /* 사이드바가 있을 때 */
+    body.chat-page .instagram-dm-input-area {
+        left: 360px;
+        width: calc(100% - 360px);
+        max-width: none;
+        padding-left: 24px !important;
+        padding-right: 24px !important;
+    }
+}
+
+/* 반응형 - 큰 데스크탑 (1200px ~ 1399px) */
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+    body.chat-page .instagram-dm-messages {
+        padding-left: 32px !important;
+        padding-right: 32px !important;
+    }
+    
+    body.chat-page .instagram-dm-input-area {
+        padding-left: 32px !important;
+        padding-right: 32px !important;
+    }
+    
+    /* 사이드바가 있을 때 */
+    body.chat-page .instagram-dm-input-area {
+        left: 360px;
+        width: calc(100% - 360px);
+        max-width: none;
+        padding-left: 32px !important;
+        padding-right: 32px !important;
+    }
+}
+
+/* 반응형 - 매우 큰 데스크탑 (1400px 이상) */
+@media (min-width: 1400px) {
+    body.chat-page .instagram-dm-messages {
+        padding-left: 40px !important;
+        padding-right: 40px !important;
+    }
+    
+    body.chat-page .instagram-dm-input-area {
+        padding-left: 40px !important;
+        padding-right: 40px !important;
+    }
+    
+    body.chat-page .instagram-dm-header {
+        padding-left: 40px;
+        padding-right: 40px;
+    }
+    
+    /* 사이드바가 있을 때 */
+    body.chat-page .instagram-dm-input-area {
+        left: 360px;
+        width: calc(100% - 360px);
+        max-width: none;
+        padding-left: 40px !important;
+        padding-right: 40px !important;
     }
 }

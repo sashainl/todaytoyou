@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useLocalStorage } from '../hooks/useLocalStorage'
-import { getDiaries, createDiary, deleteDiary as deleteDiaryFromFirestore } from '../services/firestoreService'
+import { getDiaries, createDiary, updateDiary, deleteDiary as deleteDiaryFromFirestore } from '../services/firestoreService'
 import { getAIResponse } from '../services/openRouterService'
 
 export default function Diary() {
@@ -71,6 +71,7 @@ export default function Diary() {
         return {
           ...diary,
           date: dateStr,
+          aiComfort: diary.aiComfort || null, // AI 위로 메시지 포함
           createdAt: diary.createdAt?.toDate 
             ? diary.createdAt.toDate().toISOString() 
             : (diary.createdAt instanceof Date 
@@ -134,32 +135,48 @@ export default function Diary() {
     
     setIsLoading(true)
     try {
-      // Firestore에 일기 저장
+      // AI에게 위로 메시지 받기 (전체 일기 내용을 바탕으로)
+      const prompt = `오늘 기분이 "${formData.mood}"이고, 이런 일기를 썼어:
+
+"${formData.content}"
+
+위 일기 내용을 바탕으로 사용자에게 따뜻하고 공감적인 위로 메시지를 작성해주세요. 일기의 전체 내용을 고려하여 구체적이고 진심 어린 위로를 해주세요. 필요하다면 간단한 조언이나 격려도 포함해주세요. 음악 추천은 선택사항이며, 위로 메시지가 주가 되어야 합니다. 자연스럽게 대화하듯이 말해줘.`
+      
+      let aiComfort = null
+      try {
+        console.log('AI 위로 메시지 요청 중...')
+        aiComfort = await getAIResponse(prompt, selectedPersonality)
+        console.log('AI 위로 메시지 받음:', aiComfort ? aiComfort.substring(0, 50) + '...' : 'null')
+      } catch (error) {
+        console.error('AI 추천 실패:', error)
+        // AI 응답 실패해도 일기는 저장
+      }
+      
+      // Firestore에 일기 저장 (AI 위로 메시지 포함)
+      console.log('일기 저장 시작, aiComfort:', aiComfort ? aiComfort.substring(0, 50) + '...' : 'null')
       const newDiary = await createDiary(user.uid, {
         date: formData.date,
         title: '',
         mood: formData.mood,
-        content: formData.content
+        content: formData.content,
+        aiComfort: aiComfort, // AI 위로 메시지 저장 (임베딩 없이)
+        personality: selectedPersonality // 일기 작성 시 선택한 캐릭터 저장
       })
+      console.log('일기 저장 완료, 반환된 데이터:', { ...newDiary, embedding: newDiary.embedding ? '[embedding]' : null })
       
       // 로컬 상태 업데이트
       const formattedDiary = {
         ...newDiary,
         date: formData.date,
+        aiComfort: aiComfort,
         createdAt: newDiary.createdAt?.toDate ? newDiary.createdAt.toDate().toISOString() : new Date().toISOString()
       }
       setDiaries([formattedDiary, ...diaries])
       
-      // AI에게 위로와 음악 추천 받기
-      const prompt = `오늘 기분이 "${formData.mood}"이고, 이런 일기를 썼어: "${formData.content.substring(0, 100)}..."
-      
-간단한 위로 한마디와 이 기분에 어울리는 음악 1-2곡을 추천해줘. 자연스럽게 대화하듯이 말해줘.`
-      
-      try {
-        const aiResponse = await getAIResponse(prompt, selectedPersonality)
-        showComfortModal(aiResponse, formData.mood)
-      } catch (error) {
-        console.error('AI 추천 실패:', error)
+      // AI 응답이 있으면 모달 표시
+      if (aiComfort) {
+        showComfortModal(aiComfort, formData.mood)
+      } else {
         showToast('일기가 저장되었습니다! 💝')
       }
     } catch (error) {
@@ -238,12 +255,24 @@ export default function Diary() {
                   ${moodEmojis[diary.mood]} ${diary.mood}
                 </span>
               </div>
-              <div class="border-start border-4 border-primary ps-3">
+              <div class="border-start border-4 border-primary ps-3 mb-4">
                 <p style="white-space: pre-wrap; line-height: 1.8;">${diary.content}</p>
               </div>
+              ${diary.aiComfort ? `
+              <div class="ai-comfort-section mt-4 p-3 rounded" style="background: linear-gradient(135deg, ${moodColors[diary.mood]}15 0%, ${moodColors[diary.mood]}05 100%); border-left: 3px solid ${moodColors[diary.mood]};">
+                <div class="d-flex align-items-center mb-2">
+                  <i class="bi bi-heart-fill me-2" style="color: ${moodColors[diary.mood]}"></i>
+                  <h6 class="mb-0" style="color: ${moodColors[diary.mood]}">AI의 위로</h6>
+                </div>
+                <p style="white-space: pre-wrap; line-height: 1.8; margin: 0;">${diary.aiComfort}</p>
+              </div>
+              ` : ''}
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-danger" onclick="window.deleteDiary(${diary.id})">
+              <button type="button" class="btn btn-primary" onclick="window.editDiary('${diary.id}')">
+                <i class="bi bi-pencil me-2"></i>수정
+              </button>
+              <button type="button" class="btn btn-danger" onclick="window.deleteDiary('${diary.id}')">
                 <i class="bi bi-trash me-2"></i>삭제
               </button>
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
@@ -285,10 +314,236 @@ export default function Diary() {
     }
   }
 
+  const editDiary = async (diaryId) => {
+    // 기존 모달 닫기
+    const existingModal = window.bootstrap.Modal.getInstance(document.getElementById('diaryModal'))
+    if (existingModal) {
+      existingModal.hide()
+    }
+    
+    // 일기 찾기
+    const diary = diaries.find(d => d.id === diaryId)
+    if (!diary) {
+      showToast('일기를 찾을 수 없습니다.')
+      return
+    }
+    
+    // 수정 모달 표시
+    showEditDiaryModal(diary)
+  }
+
+  const showEditDiaryModal = (diary) => {
+    const modalHTML = `
+      <div class="modal fade" id="editDiaryModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <i class="bi bi-pencil-square me-2"></i>일기 수정
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editDiaryForm">
+              <div class="modal-body">
+                <input type="hidden" id="editDiaryId" value="${diary.id}">
+                
+                <!-- 날짜 선택 -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">날짜</label>
+                  <input 
+                    type="date" 
+                    class="form-control" 
+                    id="editDiaryDate" 
+                    value="${diary.date}"
+                    required
+                  />
+                </div>
+
+                <!-- 기분 선택 -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">오늘의 기분</label>
+                  <div class="mood-selector-grid">
+                    ${Object.keys(moodEmojis).map(mood => `
+                      <div class="mood-option">
+                        <input 
+                          type="radio" 
+                          class="mood-radio" 
+                          name="editMood" 
+                          id="editMood-${mood}"
+                          value="${mood}"
+                          ${diary.mood === mood ? 'checked' : ''}
+                          required
+                        />
+                        <label htmlFor="editMood-${mood}" class="mood-label mood-${mood === '매우 좋음' ? 'excellent' : mood === '좋음' ? 'good' : mood === '보통' ? 'normal' : mood === '안 좋음' ? 'bad' : 'terrible'}">
+                          <span class="mood-emoji">${moodEmojis[mood]}</span>
+                          <span class="mood-text">${mood}</span>
+                        </label>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+                
+                <!-- 일기 내용 -->
+                <div class="mb-4">
+                  <label class="form-label fw-bold">일기 내용</label>
+                  <textarea 
+                    class="form-control" 
+                    id="editDiaryContent" 
+                    rows="6"
+                    maxlength="500"
+                    required
+                  >${diary.content}</textarea>
+                  <div class="d-flex justify-content-between mt-2">
+                    <small class="text-muted">최대 500자</small>
+                    <small id="editCharCount" class="text-muted">${diary.content.length} / 500</small>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="submit" class="btn btn-primary" id="editDiarySubmitBtn">
+                  <i class="bi bi-check-circle me-2"></i>수정 완료
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    `
+    
+    const existingModal = document.getElementById('editDiaryModal')
+    if (existingModal) {
+      existingModal.remove()
+    }
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML)
+    const modal = new window.bootstrap.Modal(document.getElementById('editDiaryModal'))
+    modal.show()
+    
+    // 문자 수 카운터
+    const contentTextarea = document.getElementById('editDiaryContent')
+    const charCount = document.getElementById('editCharCount')
+    contentTextarea.addEventListener('input', (e) => {
+      const length = e.target.value.length
+      charCount.textContent = `${length} / 500`
+      charCount.style.color = length > 450 ? '#ef4444' : length > 350 ? '#f59e0b' : '#6b7280'
+    })
+    
+    // 폼 제출 처리
+    const form = document.getElementById('editDiaryForm')
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      await handleEditDiary(diary.id)
+    })
+  }
+
+  const handleEditDiary = async (diaryId) => {
+    if (!isAuthenticated || !user) {
+      showToast('로그인이 필요합니다.')
+      return
+    }
+    
+    const submitBtn = document.getElementById('editDiarySubmitBtn')
+    const originalText = submitBtn.innerHTML
+    submitBtn.disabled = true
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>수정 중...'
+    
+    try {
+      const date = document.getElementById('editDiaryDate').value
+      const mood = document.querySelector('input[name="editMood"]:checked').value
+      const content = document.getElementById('editDiaryContent').value.trim()
+      
+      if (!date || !mood || !content) {
+        showToast('모든 필드를 입력해주세요.')
+        return
+      }
+      
+      if (content.length > 500) {
+        showToast('일기 내용은 500자 이하여야 합니다.')
+        return
+      }
+      
+      // AI에게 새로운 위로 메시지 받기 (전체 일기 내용을 바탕으로)
+      const prompt = `오늘 기분이 "${mood}"이고, 이런 일기를 썼어:
+
+"${content}"
+
+위 일기 내용을 바탕으로 사용자에게 따뜻하고 공감적인 위로 메시지를 작성해주세요. 일기의 전체 내용을 고려하여 구체적이고 진심 어린 위로를 해주세요. 필요하다면 간단한 조언이나 격려도 포함해주세요. 음악 추천은 선택사항이며, 위로 메시지가 주가 되어야 합니다. 자연스럽게 대화하듯이 말해줘.`
+      
+      let aiComfort = null
+      try {
+        console.log('AI 위로 메시지 요청 중 (수정)...')
+        aiComfort = await getAIResponse(prompt, selectedPersonality)
+        console.log('AI 위로 메시지 받음 (수정):', aiComfort ? aiComfort.substring(0, 50) + '...' : 'null')
+      } catch (error) {
+        console.error('AI 추천 실패 (수정):', error)
+        // AI 응답 실패해도 일기는 수정
+      }
+      
+      // 일기 수정 (새로운 AI 위로 메시지 포함)
+      const updateData = {
+        date,
+        mood,
+        content
+      }
+      
+      // AI 위로 메시지가 있으면 포함
+      if (aiComfort && aiComfort.trim().length > 0) {
+        updateData.aiComfort = aiComfort.trim()
+      }
+      
+      const updatedDiary = await updateDiary(user.uid, diaryId, updateData)
+      
+      // 임베딩 업데이트를 위해 일기 내용으로 다시 임베딩 생성
+      try {
+        const { getEmbedding } = await import('../services/embeddingService')
+        const embedding = await getEmbedding(content)
+        await updateDiary(user.uid, diaryId, {
+          embedding
+        })
+      } catch (embeddingError) {
+        console.warn('임베딩 업데이트 실패:', embeddingError)
+      }
+      
+      // 로컬 상태 업데이트
+      const updatedDiaryWithFormat = {
+        ...updatedDiary,
+        date,
+        aiComfort: aiComfort || updatedDiary.aiComfort || null,
+        createdAt: updatedDiary.createdAt?.toDate 
+          ? updatedDiary.createdAt.toDate().toISOString() 
+          : (updatedDiary.createdAt instanceof Date 
+            ? updatedDiary.createdAt.toISOString() 
+            : updatedDiary.createdAt)
+      }
+      
+      setDiaries(diaries.map(d => d.id === diaryId ? updatedDiaryWithFormat : d))
+      
+      // 모달 닫기
+      const modal = window.bootstrap.Modal.getInstance(document.getElementById('editDiaryModal'))
+      if (modal) modal.hide()
+      
+      // AI 응답이 있으면 모달 표시
+      if (aiComfort) {
+        showComfortModal(aiComfort, mood)
+      } else {
+        showToast('일기가 수정되었습니다! 💝')
+      }
+    } catch (error) {
+      console.error('일기 수정 실패:', error)
+      showToast('일기 수정에 실패했습니다.')
+    } finally {
+      submitBtn.disabled = false
+      submitBtn.innerHTML = originalText
+    }
+  }
+
   useEffect(() => {
     window.deleteDiary = deleteDiary
+    window.editDiary = editDiary
     return () => {
       delete window.deleteDiary
+      delete window.editDiary
     }
   })
 

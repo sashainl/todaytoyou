@@ -20,10 +20,22 @@ import { getEmbedding, findSimilarVectors } from './embeddingService'
 /**
  * 사용자의 모든 일기 조회
  */
-export async function getDiaries(userId) {
+export async function getDiaries(userId, personality = null) {
   try {
     const diariesRef = collection(db, 'users', userId, 'diaries')
-    const q = query(diariesRef, orderBy('createdAt', 'desc'))
+    let q
+    
+    // 캐릭터별 필터링
+    if (personality) {
+      q = query(
+        diariesRef, 
+        where('personality', '==', personality),
+        orderBy('createdAt', 'desc')
+      )
+    } else {
+      q = query(diariesRef, orderBy('createdAt', 'desc'))
+    }
+    
     const snapshot = await getDocs(q)
     
     return snapshot.docs.map(doc => ({
@@ -32,6 +44,22 @@ export async function getDiaries(userId) {
     }))
   } catch (error) {
     console.error('Error getting diaries:', error)
+    // 인덱스 에러인 경우 personality 필터 없이 재시도
+    if (error.code === 'failed-precondition' && personality) {
+      console.warn('Index error, retrying without personality filter')
+      try {
+        const diariesRef = collection(db, 'users', userId, 'diaries')
+        const q = query(diariesRef, orderBy('createdAt', 'desc'))
+        const snapshot = await getDocs(q)
+        // 클라이언트 측에서 필터링
+        return snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(diary => diary.personality === personality)
+      } catch (retryError) {
+        console.error('Error retrying getDiaries:', retryError)
+        throw retryError
+      }
+    }
     throw error
   }
 }
@@ -63,7 +91,7 @@ export async function getDiary(userId, diaryId) {
  */
 export async function createDiary(userId, diaryData) {
   try {
-    const { date, title, mood, content, includeVector = true } = diaryData
+    const { date, title, mood, content, aiComfort, personality, includeVector = true } = diaryData
 
     // 유효성 검사
     if (!date || !mood || !content) {
@@ -88,7 +116,20 @@ export async function createDiary(userId, diaryData) {
       createdAt: Timestamp.now()
     }
 
-    // 벡터 임베딩 생성 (옵션)
+    // 캐릭터 정보 저장 (일기 작성 시 선택한 캐릭터)
+    if (personality) {
+      newDiary.personality = personality
+    }
+
+    // AI 위로 메시지 저장 (임베딩 없이)
+    if (aiComfort && aiComfort.trim().length > 0) {
+      newDiary.aiComfort = aiComfort.trim()
+      console.log('AI 위로 메시지 저장:', aiComfort.substring(0, 50) + '...')
+    } else {
+      console.log('AI 위로 메시지가 없어서 저장하지 않음, aiComfort:', aiComfort)
+    }
+
+    // 벡터 임베딩 생성 (옵션) - 일기 내용만 임베딩, AI 위로는 임베딩하지 않음
     if (includeVector) {
       try {
         const embedding = await getEmbedding(content)
@@ -99,10 +140,18 @@ export async function createDiary(userId, diaryData) {
       }
     }
 
+    console.log('일기 저장 데이터:', { ...newDiary, embedding: newDiary.embedding ? '[embedding]' : null })
     const docRef = await addDoc(diariesRef, newDiary)
+    console.log('일기 저장 완료, 문서 ID:', docRef.id)
+    
+    // 저장된 문서 다시 읽어서 확인
+    const savedDoc = await getDoc(docRef)
+    const savedData = savedDoc.data()
+    console.log('저장된 일기 데이터 확인:', { ...savedData, embedding: savedData.embedding ? '[embedding]' : null })
+    
     return {
       id: docRef.id,
-      ...newDiary
+      ...savedData
     }
   } catch (error) {
     console.error('Error creating diary:', error)
@@ -129,7 +178,20 @@ export async function updateDiary(userId, diaryId, updates) {
       throw new Error('Content exceeds 500 characters')
     }
 
-    await updateDoc(diaryRef, updates)
+    // includeVector는 업데이트 객체에서 제거 (메타데이터)
+    const { includeVector, ...updateData } = updates
+    
+    // 임베딩이 직접 전달된 경우 포함
+    if (updates.embedding) {
+      updateData.embedding = updates.embedding
+    }
+    
+    // aiComfort가 null이면 명시적으로 null로 설정 (필드 삭제)
+    if (updates.aiComfort === null) {
+      updateData.aiComfort = null
+    }
+
+    await updateDoc(diaryRef, updateData)
     
     const updatedSnap = await getDoc(diaryRef)
     return {

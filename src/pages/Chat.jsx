@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { getAIResponse } from '../services/openRouterService'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { useAuth } from '../context/AuthContext'
-import { saveChatMessageWithVector, searchSimilarMessages, getChatMessages } from '../services/firestoreService'
+import { saveChatMessageWithVector, searchSimilarMessages, getChatMessages, getDiaries } from '../services/firestoreService'
 
 export default function Chat() {
   const { user, isAuthenticated } = useAuth()
@@ -14,6 +14,8 @@ export default function Chat() {
   const messagesCacheRef = useRef({}) // 캐릭터별 메시지 캐시
   const messagesEndRef = useRef(null)
   const chatMessagesRef = useRef(null)
+  const isMountedRef = useRef(false) // 컴포넌트 마운트 상태 추적
+  const loadingRef = useRef(false) // 로딩 중 중복 호출 방지
 
   const personalities = {
     energetic: {
@@ -28,14 +30,14 @@ export default function Chat() {
       icon: '🔵',
       description: '따뜻하고 친절한 조언',
       color: '#3b82f6',
-      initialMessage: '안녕! 무슨 일 있어? 편하게 이야기해봐 💙'
+      initialMessage: '안녕! 무슨 일 있어? 편하게 이야기해봐 '
     },
     calm: {
       name: '차분한 친구',
       icon: '🟣',
       description: '부드럽고 따뜻한 공감',
       color: '#8b5cf6',
-      initialMessage: '괜찮아, 여기 앉아서 천천히 얘기하자 💙'
+      initialMessage: '괜찮아, 여기 앉아서 천천히 얘기하자 '
     }
   }
 
@@ -66,22 +68,28 @@ export default function Chat() {
 
   // 캐릭터별 메시지 불러오기
   const loadMessagesForPersonality = useCallback(async (personality, forceRefresh = true) => {
+    // 중복 호출 방지
+    if (loadingRef.current) {
+      console.log('Already loading messages, skipping...')
+      return
+    }
+    
     // 캐시에 메시지가 있고 강제 새로고침이 아니면 먼저 표시 (즉시 전환)
     if (!forceRefresh && messagesCacheRef.current[personality]) {
       setMessages(messagesCacheRef.current[personality])
       setIsLoadingMessages(false)
-      // 백그라운드에서 최신 데이터 불러오기 (선택적)
-      // 하지만 대화창을 열 때마다 최신 데이터를 보여주기 위해 항상 불러오기
+      return
     }
     
-    // 항상 Firestore에서 최신 데이터 불러오기
+    // 로딩 시작
+    loadingRef.current = true
     setIsLoadingMessages(true)
     
     if (!isAuthenticated || !user) {
       // 로그인하지 않은 경우 초기 메시지만 표시
       const initialMessage = personalities[personality].initialMessage
       const botMessage = {
-        id: Date.now(),
+        id: `initial-${personality}`, // 고정 ID 사용
         text: initialMessage,
         isUser: false,
         time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
@@ -90,6 +98,7 @@ export default function Chat() {
       messagesCacheRef.current[personality] = cachedMessages
       setMessages(cachedMessages)
       setIsLoadingMessages(false)
+      loadingRef.current = false
       return
     }
 
@@ -121,7 +130,7 @@ export default function Chat() {
         console.log('No messages found, showing initial message')
         const initialMessage = personalities[personality].initialMessage
         const botMessage = {
-          id: Date.now(),
+          id: `initial-${personality}`, // 고정 ID 사용
           text: initialMessage,
           isUser: false,
           time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
@@ -141,7 +150,7 @@ export default function Chat() {
       } else {
         const initialMessage = personalities[personality].initialMessage
         const botMessage = {
-          id: Date.now(),
+          id: `initial-${personality}`, // 고정 ID 사용
           text: initialMessage,
           isUser: false,
           time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
@@ -150,18 +159,34 @@ export default function Chat() {
       }
     } finally {
       setIsLoadingMessages(false)
+      loadingRef.current = false
     }
   }, [isAuthenticated, user])
 
-  // 컴포넌트 마운트 시 또는 성격 변경 시 메시지 불러오기 (항상 최신 데이터)
+  // 컴포넌트 마운트 시 메시지 불러오기
   useEffect(() => {
-    // 컴포넌트가 마운트되거나 캐릭터가 변경될 때 항상 Firestore에서 최신 데이터 불러오기
-    loadMessagesForPersonality(selectedPersonality, true)
+    if (!isMountedRef.current) {
+      // 첫 마운트 시에만 메시지 불러오기
+      isMountedRef.current = true
+      loadMessagesForPersonality(selectedPersonality, true)
+    }
+    
+    // 언마운트 시 플래그 리셋
+    return () => {
+      isMountedRef.current = false
+    }
+  }, []) // 빈 배열 - 마운트 시에만 실행
+
+  // 캐릭터 변경 시 메시지 불러오기
+  useEffect(() => {
+    if (isMountedRef.current) {
+      loadMessagesForPersonality(selectedPersonality, true)
+    }
   }, [selectedPersonality, loadMessagesForPersonality])
 
   // 사용자 로그인 상태가 변경될 때도 메시지 불러오기
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && isMountedRef.current) {
       // 로그인했을 때 최신 메시지 불러오기
       loadMessagesForPersonality(selectedPersonality, true)
     }
@@ -209,13 +234,32 @@ export default function Chat() {
       if (isAuthenticated && user) {
         try {
           contextMessages = await searchSimilarMessages(user.uid, message, {
-            limit: 3,
-            minSimilarity: 0.7,
+            limit: 5, // 더 많은 맥락을 위해 5개로 증가
+            minSimilarity: 0.65, // 약간 낮춰서 더 많은 관련 메시지 찾기
             personality: selectedPersonality
           })
         } catch (searchError) {
           console.warn('Error searching similar messages:', searchError)
           // 검색 실패해도 계속 진행
+        }
+      }
+
+      // 일기 데이터 가져오기 (대화 컨텍스트에 활용)
+      // 해당 캐릭터와 관련된 일기만 가져오기
+      let recentDiaries = []
+      if (isAuthenticated && user) {
+        try {
+          // 해당 캐릭터의 일기만 가져오기
+          const diaries = await getDiaries(user.uid, selectedPersonality)
+          // 최근 10개 일기 가져오기 (날짜와 기분, 내용 일부 포함)
+          recentDiaries = diaries.slice(0, 10).map(diary => ({
+            date: diary.date,
+            mood: diary.mood,
+            content: diary.content.substring(0, 200) // 일기 내용 일부만 (너무 길면 안 됨)
+          }))
+        } catch (diaryError) {
+          console.warn('Error loading diaries for context:', diaryError)
+          // 일기 로드 실패해도 계속 진행
         }
       }
 
@@ -228,8 +272,75 @@ export default function Chat() {
         enhancedMessage = `과거 대화 맥락:\n${contextText}\n\n현재 질문: ${message}`
       }
 
-      // OpenRouter API 호출 (선택된 성격 사용)
-      const response = await getAIResponse(enhancedMessage, selectedPersonality)
+      // 최근 대화 내용 수집 (사용자 기억을 위한 맥락 활용)
+      // 최근 10개 메시지만 사용하여 대화 흐름에 집중 (너무 많은 맥락은 혼란을 줄 수 있음)
+      const recentMessages = messages.slice(-15) // 최근 10개 메시지
+      const conversationContext = recentMessages
+        .map(m => `${m.isUser ? '사용자' : 'AI'}: ${m.text}`)
+        .join('\n')
+      
+      // 일기 내용을 텍스트로 변환
+      let diaryContext = ''
+      if (recentDiaries.length > 0) {
+        diaryContext = recentDiaries.map(diary => {
+          return `날짜: ${diary.date}, 기분: ${diary.mood}, 내용: ${diary.content}${diary.content.length >= 200 ? '...' : ''}`
+        }).join('\n')
+      }
+      
+      // 사용자를 기억하는 느낌의 자연스러운 대화를 위한 프롬프트 생성
+      let fullContext
+      if (conversationContext && recentMessages.length > 2) {
+        // 과거 대화 맥락이 있는 경우
+        // 주의: 아래 대화 내용은 오직 이 캐릭터(${personalities[selectedPersonality].name})와의 대화만 포함되어 있습니다.
+        let contextParts = [`당신은 사용자와 오랫동안 대화를 나눈 친구입니다. 아래는 당신(${personalities[selectedPersonality].name})과 사용자의 최근 대화 내용입니다:\n\n${conversationContext}`]
+        
+        // 일기 내용이 있으면 추가
+        if (diaryContext) {
+          contextParts.push(`\n또한 사용자가 작성한 일기 내용도 있습니다:\n\n${diaryContext}`)
+        }
+        
+        contextParts.push(`\n위 대화 내용을 바탕으로 사용자의 현재 메시지에 직접적으로 응답해주세요.
+
+중요 지침:
+1. **현재 사용자 메시지에 직접 응답**: "${message}" 이 메시지에 대해 먼저 응답하고, 필요시 이전 대화나 일기 내용을 자연스럽게 연결하세요.
+2. **대화의 연속성 유지**: 위 대화 내용의 흐름을 이어가며 자연스럽게 대화하세요. 각 메시지가 독립적이지 않고 이전 대화와 연결되어야 합니다.
+3. **일기 언급은 자연스럽게**: 일기 내용을 언급할 때는 대화 맥락에 자연스럽게 맞을 때만 언급하세요. 강제로 일기를 언급하지 마세요.
+4. **감정 공감**: 사용자의 감정을 이해하고 공감하며, 따뜻하게 위로해주세요.
+5. **간결한 답변**: 1~2문장으로 간결하게 작성하세요.
+6. **대화 흐름**: 이전 대화에서 언급된 내용이 있으면 자연스럽게 이어가되, 현재 메시지에 대한 응답이 주가 되어야 합니다.
+
+현재 사용자 메시지: "${message}"`)
+        
+        fullContext = contextParts.join('')
+      } else if (contextMessages.length > 0 || diaryContext) {
+        // 벡터 검색 결과나 일기 내용이 있는 경우
+        // 주의: 아래 대화 내용은 오직 이 캐릭터(${personalities[selectedPersonality].name})와의 대화만 포함되어 있습니다.
+        let contextParts = [`당신은 사용자와 대화를 나눈 친구입니다. 당신은 ${personalities[selectedPersonality].name}입니다.`]
+        
+        if (contextMessages.length > 0) {
+          contextParts.push(`\n아래는 당신(${personalities[selectedPersonality].name})과 사용자의 과거 대화 맥락입니다:\n\n${enhancedMessage}`)
+        }
+        
+        if (diaryContext) {
+          contextParts.push(`\n또한 사용자가 작성한 일기 내용도 있습니다:\n\n${diaryContext}`)
+        }
+        
+        contextParts.push(`\n위 맥락을 바탕으로 사용자의 현재 메시지 "${message}"에 직접적으로 응답해주세요.
+
+중요 지침:
+1. **현재 메시지에 직접 응답**: 사용자의 현재 메시지를 먼저 이해하고 응답하세요.
+2. **대화 연속성**: 이전 대화나 일기 내용을 언급할 때는 현재 대화 맥락에 자연스럽게 맞을 때만 언급하세요.
+3. **간결한 답변**: 1~2문장으로 간결하게 작성하세요.
+4. **자연스러운 대화**: 각 메시지가 독립적이지 않고 대화의 흐름을 이어가세요.`)
+        
+        fullContext = contextParts.join('')
+      } else {
+        // 대화 맥락이 없는 경우
+        fullContext = enhancedMessage
+      }
+
+      // OpenRouter API 호출 (선택된 성격 사용, 사용자를 기억하는 자연스러운 대화)
+      const response = await getAIResponse(fullContext, selectedPersonality)
       const botMessage = {
         id: Date.now() + 1,
         text: response,
@@ -307,10 +418,8 @@ export default function Chat() {
         <aside className="chat-sidebar">
           <div className="chat-sidebar-header">
             <h5 className="mb-0">대화</h5>
-          </div>
-          <div className="chat-sidebar-content">
-            {/* 캐릭터 선택 */}
-            <div className="sidebar-section">
+            {/* 캐릭터 선택 (상단 배치) */}
+            <div className="sidebar-section sidebar-section-top">
               <div className="sidebar-section-title">
                 <i className="bi bi-person-circle me-2"></i>
                 <span>캐릭터 선택</span>
@@ -335,18 +444,8 @@ export default function Chat() {
                 ))}
               </div>
             </div>
-            
-            {/* 대화 기록 (향후 확장용) */}
-            <div className="sidebar-section">
-              <div className="sidebar-section-title">
-                <i className="bi bi-clock-history me-2"></i>
-                <span>최근 대화</span>
-              </div>
-              <div className="chat-history-empty">
-                <i className="bi bi-inbox"></i>
-                <p>대화 기록이 없습니다</p>
-              </div>
-            </div>
+          </div>
+          <div className="chat-sidebar-content">
           </div>
         </aside>
 

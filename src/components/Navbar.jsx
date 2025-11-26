@@ -1,12 +1,10 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import { signOutUser } from '../services/authService'
 import { useEffect, useState } from 'react'
 import AuthModal from './AuthModal'
 
 export default function Navbar() {
-  const { theme, toggleTheme } = useTheme()
   const { user, isAuthenticated } = useAuth()
   const location = useLocation()
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -52,11 +50,6 @@ export default function Navbar() {
             </li>
             <li className="nav-item">
               <Link className={`nav-link ${isActive('/statistics') ? 'active' : ''}`} to="/statistics" onClick={closeNavbar}>통계</Link>
-            </li>
-            <li className="nav-item ms-2">
-              <button className="theme-toggle" onClick={toggleTheme} aria-label="테마 전환">
-                <i className={`bi ${theme === 'dark' ? 'bi-sun-fill' : 'bi-moon-fill'}`}></i>
-              </button>
             </li>
             <li className="nav-item ms-2">
               {isAuthenticated ? (

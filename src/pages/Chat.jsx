@@ -11,6 +11,8 @@ export default function Chat() {
   const [isTyping, setIsTyping] = useState(false)
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [selectedPersonality, setSelectedPersonality] = useLocalStorage('chatPersonality', 'calm')
+  const [showMobileCharacterSelect, setShowMobileCharacterSelect] = useLocalStorage('showMobileCharacterSelect', true)
+  const [isMobile, setIsMobile] = useState(false)
   const messagesCacheRef = useRef({}) // 캐릭터별 메시지 캐시
   const messagesEndRef = useRef(null)
   const chatMessagesRef = useRef(null)
@@ -199,6 +201,20 @@ export default function Chat() {
     }
   }, [messages, isTyping, isLoadingMessages])
   
+  // 모바일 감지
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile)
+    }
+  }, [])
+
   useEffect(() => {
     // Chat 페이지에서 body에 클래스 추가
     document.body.classList.add('chat-page')
@@ -421,7 +437,53 @@ export default function Chat() {
 
   const changePersonality = async (personality) => {
     setSelectedPersonality(personality)
+    // 모바일에서 캐릭터 선택 시 채팅 화면으로 전환
+    if (isMobile) {
+      setShowMobileCharacterSelect(false)
+    }
     // 메시지는 useEffect에서 자동으로 불러옴
+  }
+
+  const handleBackToCharacterSelect = () => {
+    setShowMobileCharacterSelect(true)
+  }
+
+  // 모바일에서 캐릭터 선택 화면 표시
+  if (isMobile && showMobileCharacterSelect) {
+    return (
+      <section id="chat" className="instagram-dm-container">
+        <div className="mobile-character-select-screen">
+          <div className="mobile-character-select-header">
+            <h2 className="mb-3">누구와 대화할까요?</h2>
+            <p className="text-muted mb-4">마음을 나눌 친구를 선택해주세요</p>
+          </div>
+          <div className="mobile-character-select-list">
+            {Object.entries(personalities).map(([key, info]) => (
+              <button
+                key={key}
+                className={`mobile-character-card ${selectedPersonality === key ? 'active' : ''}`}
+                onClick={() => changePersonality(key)}
+                style={{ 
+                  borderLeftColor: info.color,
+                  '--character-color': info.color
+                }}
+              >
+                <div className="mobile-character-icon" style={{ backgroundColor: `${info.color}20` }}>
+                  <span style={{ fontSize: '2.5rem' }}>{info.icon}</span>
+                </div>
+                <div className="mobile-character-info">
+                  <h4 className="mobile-character-name">{info.name}</h4>
+                  <p className="mobile-character-desc">{info.description}</p>
+                </div>
+                {selectedPersonality === key && (
+                  <i className="bi bi-check-circle-fill mobile-character-check"></i>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
   }
 
   return (
@@ -467,6 +529,15 @@ export default function Chat() {
           {/* 상단 헤더 */}
           <div className="instagram-dm-header">
             <div className="d-flex align-items-center justify-content-between w-100">
+              {isMobile && (
+                <button 
+                  className="mobile-back-btn"
+                  onClick={handleBackToCharacterSelect}
+                  aria-label="캐릭터 선택으로 돌아가기"
+                >
+                  <i className="bi bi-arrow-left"></i>
+                </button>
+              )}
               <div className="d-flex align-items-center">
                 <div className="instagram-profile-avatar me-3">
                   <span>{personalities[selectedPersonality].icon}</span>

@@ -110,7 +110,7 @@ body::before {
 .nav-link.active {
     color: var(--primary-color) !important;
     background-color: #ffffff !important;
-    border-radius: 8px;
+    border-radius: 16px;
     padding: 6px 12px !important;
 }
 
@@ -143,7 +143,9 @@ body::before {
 /* 히어로 섹션 */
 .hero-section {
     background: linear-gradient(135deg, #667eea10 0%, #764ba220 100%);
-    padding-top: 80px;
+    padding-top: 100px;
+    padding-bottom: 70px;
+    min-height: auto;
 }
 
 [data-theme="dark"] .hero-section {
@@ -205,10 +207,16 @@ body::before {
 }
 
 /* 버튼 스타일 */
+/* 전역 버튼 스타일 */
+.btn {
+    border-radius: 20px;
+}
+
 .btn-primary {
     background: var(--primary-gradient);
     border: none;
     transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 20px;
 }
 
 .btn-primary:hover {
@@ -231,7 +239,7 @@ body::before {
 /* 챗봇 스타일 */
 .chat-card {
     max-height: 700px;
-    border-radius: 20px;
+    border-radius: 28px;
     overflow: hidden;
     background-color: var(--card-bg);
     border: 1px solid var(--border-color);
@@ -391,7 +399,7 @@ body::before {
 
 /* 감정 버튼 */
 .emotion-buttons .btn {
-    border-radius: 20px;
+    border-radius: 28px;
     transition: all 0.2s;
 }
 
@@ -406,7 +414,7 @@ body::before {
 }
 
 .mood-selector .btn {
-    border-radius: 12px;
+    border-radius: 20px;
     transition: all 0.2s;
 }
 
@@ -423,7 +431,7 @@ body::before {
     padding: 15px;
     border-left: 4px solid var(--primary-color);
     background: #f8f9fa;
-    border-radius: 8px;
+    border-radius: 16px;
     margin-bottom: 12px;
     cursor: pointer;
     transition: all 0.2s;
@@ -600,6 +608,7 @@ body::before {
     background-color: var(--card-bg);
     color: var(--text-color);
     border-color: var(--border-color);
+    border-radius: 24px;
 }
 
 .card:hover {
@@ -616,6 +625,7 @@ body::before {
     background-color: var(--card-bg);
     color: var(--text-color);
     border-color: var(--border-color);
+    border-radius: 16px;
 }
 
 .form-control:focus {
@@ -948,14 +958,14 @@ body.chat-page::before {
     width: 100px;
     height: 4px;
     background: var(--primary-gradient);
-    border-radius: 2px;
+    border-radius: 8px;
     margin: 0 auto;
 }
 
 /* 일기 폼 카드 */
 .diary-form-card {
     background: var(--card-bg);
-    border-radius: 24px;
+    border-radius: 32px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     border: 1px solid var(--border-color);
@@ -971,13 +981,14 @@ body.chat-page::before {
     color: white;
     padding: 2rem;
     border: none;
+    border-radius: 16px;
 }
 
 .form-icon-wrapper {
     width: 60px;
     height: 60px;
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 16px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1004,7 +1015,7 @@ body.chat-page::before {
 
 .form-control-custom {
     border: 2px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: 20px;
     padding: 1rem 1.25rem;
     font-size: 1rem;
     transition: all 0.3s ease;
@@ -1031,7 +1042,7 @@ body.chat-page::before {
 
 .date-display-box {
     background: #374151;
-    border-radius: 12px;
+    border-radius: 20px;
     padding: 1.5rem;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -1211,7 +1222,7 @@ body.chat-page::before {
     min-height: 150px;
     resize: vertical;
     border: 2px solid #e5e7eb;
-    border-radius: 16px;
+    border-radius: 24px;
     padding: 1.25rem;
     font-size: 1rem;
     line-height: 1.6;
@@ -1254,7 +1265,7 @@ body.chat-page::before {
 .btn-save-diary {
     background: var(--primary-gradient);
     border: none;
-    border-radius: 16px;
+    border-radius: 28px;
     padding: 1rem 3rem;
     font-size: 1.1rem;
     font-weight: 600;
@@ -1299,7 +1310,7 @@ body.chat-page::before {
 
 .sidebar-card {
     background: var(--card-bg);
-    border-radius: 20px;
+    border-radius: 28px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     border: 1px solid var(--border-color);
@@ -1325,7 +1336,7 @@ body.chat-page::before {
     width: 50px;
     height: 50px;
     background: var(--primary-gradient);
-    border-radius: 12px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1424,7 +1435,7 @@ body.chat-page::before {
     padding: 1rem;
     margin-bottom: 0.75rem;
     background: var(--bg-secondary);
-    border-radius: 12px;
+    border-radius: 20px;
     border-left: 4px solid transparent;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -1443,7 +1454,7 @@ body.chat-page::before {
 .diary-item-mood-indicator {
     width: 40px;
     height: 40px;
-    border-radius: 10px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2495,7 +2506,7 @@ body.chat-page::before {
     padding: 12px;
     border: 1px solid var(--border-color);
     border-left: 3px solid;
-    border-radius: 12px;
+    border-radius: 20px;
     background: var(--card-bg);
     cursor: pointer;
     transition: all 0.2s ease;
@@ -2529,7 +2540,7 @@ body.chat-page::before {
     align-items: center;
     justify-content: center;
     background: var(--bg-secondary);
-    border-radius: 10px;
+    border-radius: 16px;
 }
 
 .personality-item.active .personality-icon {
@@ -2751,7 +2762,7 @@ body.chat-page::before {
 .instagram-message-bubble {
     max-width: 70%;
     padding: 8px 12px;
-    border-radius: 18px;
+    border-radius: 24px;
     word-wrap: break-word;
     position: relative;
     line-height: 1.5;
@@ -2760,17 +2771,17 @@ body.chat-page::before {
 
 .instagram-bubble-bot {
     background: #efefef;
-    border-bottom-left-radius: 4px;
+    border-bottom-left-radius: 8px;
     color: #262626;
 }
 
 .instagram-message-bot:not(:first-child) .instagram-bubble-bot {
-    border-top-left-radius: 4px;
+    border-top-left-radius: 8px;
 }
 
 .instagram-message-bot:first-child .instagram-bubble-bot,
 .instagram-message-bot:has(+ .instagram-message-user) .instagram-bubble-bot {
-    border-top-left-radius: 18px;
+    border-top-left-radius: 24px;
 }
 
 [data-theme="dark"] .instagram-bubble-bot {
@@ -2780,18 +2791,18 @@ body.chat-page::before {
 /*유저 메시지 버블 파란색 위치 */
 .instagram-bubble-user {
     background: #0095f6;
-    border-bottom-right-radius: 4px;
+    border-bottom-right-radius: 8px;
     color: #ffffff;
     margin-right: -32px;
 }
 
 .instagram-message-user:not(:first-child) .instagram-bubble-user {
-    border-top-right-radius: 4px;
+    border-top-right-radius: 8px;
 }
 
 .instagram-message-user:first-child .instagram-bubble-user,
 .instagram-message-user:has(+ .instagram-message-bot) .instagram-bubble-user {
-    border-top-right-radius: 18px;
+    border-top-right-radius: 24px;
 }
 
 [data-theme="dark"] .instagram-bubble-user {
@@ -2878,7 +2889,7 @@ body.chat-page::before {
     align-items: center;
     gap: 8px;
     background: #efefef;
-    border-radius: 22px;
+    border-radius: 28px;
     padding: 8px 16px;
     margin-bottom: 4px;
     width: 100%;
@@ -2972,18 +2983,94 @@ body.chat-page::before {
 
 /* 반응형 - 모바일 */
 @media (max-width: 768px) {
+    /* 모바일에서 사이드바 완전히 숨기기 */
+    .chat-sidebar {
+        display: none !important;
+    }
+
     .instagram-dm-container {
-        min-height: calc(100vh - 120px);
+        min-height: calc(100vh - 56px);
         margin-bottom: 0;
         padding-bottom: 0;
+        padding-top: 56px;
+        /* iOS safe area 고려 */
+        padding-bottom: env(safe-area-inset-bottom, 0);
     }
 
     .instagram-dm-wrapper {
-        margin-top: -15px;
+        margin-top: 0;
         margin-bottom: 0;
-        height: calc(100vh - 100px);
+        height: calc(100vh - 56px);
+        max-width: 100%;
+        border-radius: 0;
     }
 
+    /* 모바일 헤더 개선 */
+    .instagram-dm-header {
+        position: sticky;
+        top: 56px;
+        z-index: 100;
+        padding: 12px 16px !important;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(219, 219, 219, 0.5);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="dark"] .instagram-dm-header {
+        background: rgba(26, 26, 26, 0.98);
+        border-bottom-color: rgba(38, 38, 38, 0.5);
+    }
+
+    .instagram-dm-header .instagram-profile-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 1.2rem;
+    }
+
+    .instagram-dm-header h6 {
+        font-size: 0.9375rem;
+    }
+
+    .instagram-dm-header small {
+        font-size: 0.75rem;
+    }
+
+    /* 모바일 메시지 영역 개선 */
+    body.chat-page .instagram-dm-messages {
+        padding: 16px 16px 90px 16px !important;
+        box-sizing: border-box;
+        /* iOS safe area 고려 */
+        padding-bottom: calc(90px + env(safe-area-inset-bottom, 0));
+    }
+
+    /* 모바일 메시지 버블 개선 */
+    .instagram-message {
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .instagram-message-bubble {
+        max-width: 85%;
+        padding: 10px 14px;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+        border-radius: 18px;
+    }
+
+    .instagram-message-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 1.1rem;
+    }
+
+    .instagram-message-time {
+        font-size: 0.6875rem;
+        margin-top: 4px;
+    }
+
+    /* 모바일 입력창 개선 */
     .instagram-dm-input-area {
         position: fixed;
         bottom: 0;
@@ -2991,8 +3078,21 @@ body.chat-page::before {
         right: 0;
         width: 100%;
         z-index: 1000;
-        padding: 8px 16px 0 16px !important;
-        margin-bottom: 0 !important;
+        padding: 12px 16px !important;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0)) !important;
+        margin: 0 !important;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(219, 219, 219, 0.5);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    [data-theme="dark"] .instagram-dm-input-area {
+        background: rgba(26, 26, 26, 0.98);
+        border-top-color: rgba(38, 38, 38, 0.5);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
     }
     
     body.chat-page .instagram-dm-input-area {
@@ -3002,54 +3102,341 @@ body.chat-page::before {
         right: 0;
         width: 100%;
         z-index: 1000;
-        /* 메시지 창과 좌우 패딩 일치 - 오른쪽 패딩 줄여서 공간 확보 */
-        padding: 32px 24px 0 16px !important;
+        padding: 12px 16px !important;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0)) !important;
         margin: 0 !important;
-        margin-bottom: 0 !important;
-        box-sizing: border-box;
-    }
-    
-    body.chat-page .instagram-dm-messages {
-        padding-left: 24px !important;
-        padding-right: 16px !important;
         box-sizing: border-box;
     }
     
     body.chat-page .instagram-input-wrapper {
         margin-bottom: 0 !important;
         width: 100%;
-        padding: 8px 12px 8px 16px;
+        max-width: 100%;
+        padding: 10px 14px !important;
         box-sizing: border-box;
+        background: var(--bg-secondary);
+        border-radius: 28px;
+        border: 1px solid var(--border-color);
+    }
+
+    body.chat-page .instagram-input {
+        font-size: 0.9375rem;
+        padding: 8px 12px;
+        min-height: 44px; /* 터치 영역 확보 */
+        border: none;
+        background: transparent;
+    }
+
+    body.chat-page .instagram-send-btn {
+        min-width: 44px;
+        min-height: 44px;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    body.chat-page .instagram-send-btn:active {
+        transform: scale(0.95);
+        background: var(--primary-color-dark);
+    }
+
+    body.chat-page .instagram-send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
     
     body.chat-page .instagram-quick-emotions {
-        margin-bottom: 0 !important;
-        padding-bottom: 0 !important;
-    }
-    
-    body.chat-page .instagram-dm-wrapper {
-        padding-bottom: 100px; /* 입력창 높이만큼 하단 패딩 추가 */
-    }
-    
-    body.chat-page .instagram-dm-messages {
-        padding-bottom: 100px; /* 입력창 높이만큼 하단 패딩 추가 */
-    }
-    /* 모바일에서는 빠른 감정 이모지 숨김 */
-    .instagram-quick-emotions,
-    .instagram-emoji-btn {
         display: none !important;
     }
     
-    .instagram-dm-header {
-        top: 70px;
+    body.chat-page .instagram-dm-wrapper {
+        padding-bottom: 0;
     }
     
-    .instagram-message-bubble {
-        max-width: 80%;
+    /* 로딩 및 빈 상태 개선 */
+    .instagram-dm-messages > .text-center {
+        padding: 40px 16px;
     }
 
-    .instagram-message {
+    .spinner-border-sm {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+}
+
+/* 모바일 캐릭터 선택 화면 */
+.mobile-character-select-screen {
+    min-height: calc(100vh - 56px);
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+}
+
+[data-theme="dark"] .mobile-character-select-screen {
+    background: #1a1a1a;
+}
+
+.mobile-character-select-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.mobile-character-select-header h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 12px;
+}
+
+.mobile-character-select-header p {
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+}
+
+.mobile-character-select-list {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.mobile-character-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    border: 2px solid var(--border-color);
+    border-left: 4px solid;
+    border-radius: 24px;
+    background: var(--card-bg);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .mobile-character-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-character-card:active {
+    transform: scale(0.98);
+}
+
+.mobile-character-card:hover {
+    background: var(--bg-secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .mobile-character-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-character-card.active {
+    background: var(--bg-secondary);
+    border-color: var(--character-color, var(--primary-color));
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25);
+    transform: translateY(-2px);
+}
+
+.mobile-character-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--bg-secondary);
+}
+
+.mobile-character-card.active .mobile-character-icon {
+    background: var(--character-color, var(--primary-color));
+    color: white;
+}
+
+.mobile-character-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.mobile-character-name {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0 0 6px 0;
+}
+
+.mobile-character-desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.mobile-character-check {
+    color: var(--character-color, var(--primary-color));
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+/* 모바일 헤더 뒤로가기 버튼 */
+.mobile-back-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.25rem;
+    padding: 8px;
+    margin-right: 12px;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.mobile-back-btn:hover {
+    background: var(--bg-secondary);
+}
+
+.mobile-back-btn:active {
+    transform: scale(0.95);
+}
+
+@media (min-width: 769px) {
+    .mobile-back-btn {
+        display: none;
+    }
+
+    .mobile-character-select-screen {
+        display: none !important;
+    }
+}
+
+/* 작은 모바일 화면 (576px 이하) 추가 최적화 */
+@media (max-width: 576px) {
+    .mobile-character-select-screen {
+        padding: 32px 16px;
+    }
+
+    .mobile-character-select-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .mobile-character-select-header p {
+        font-size: 0.875rem;
+    }
+
+    .mobile-character-select-list {
         gap: 12px;
+    }
+
+    .mobile-character-card {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .mobile-character-icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .mobile-character-name {
+        font-size: 1rem;
+    }
+
+    .mobile-character-desc {
+        font-size: 0.8125rem;
+    }
+
+    .instagram-dm-container {
+        padding-top: 56px;
+    }
+
+    .instagram-dm-header {
+        padding: 10px 12px !important;
+        top: 56px;
+    }
+
+    .instagram-dm-header .instagram-profile-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 1.1rem;
+        margin-right: 10px !important;
+    }
+
+    .instagram-dm-header h6 {
+        font-size: 0.875rem;
+    }
+
+    .instagram-dm-header small {
+        font-size: 0.6875rem;
+    }
+
+    body.chat-page .instagram-dm-messages {
+        padding: 12px 12px 85px 12px !important;
+        padding-bottom: calc(85px + env(safe-area-inset-bottom, 0)) !important;
+    }
+
+    .instagram-message-bubble {
+        max-width: 90%;
+        padding: 9px 12px;
+        font-size: 0.875rem;
+        border-radius: 16px;
+    }
+
+    .instagram-message-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 1rem;
+    }
+
+    .instagram-message-time {
+        font-size: 0.625rem;
+    }
+
+    body.chat-page .instagram-dm-input-area {
+        padding: 10px 12px !important;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0)) !important;
+    }
+
+    body.chat-page .instagram-input-wrapper {
+        padding: 8px 12px !important;
+        max-width: 100%;
+    }
+
+    body.chat-page .instagram-input {
+        font-size: 0.875rem;
+        padding: 6px 10px;
+        min-height: 40px;
+    }
+
+    body.chat-page .instagram-send-btn {
+        min-width: 40px;
+        min-height: 40px;
+        width: 40px;
+        height: 40px;
+        font-size: 0.875rem;
     }
 }
 

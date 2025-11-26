@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <section id="home" className="hero-section">
       <div className="container">
-        <div className="row align-items-center min-vh-100">
+        <div className="row align-items-center py-5">
           <div className="col-12 col-lg-6 text-center text-lg-start mb-4 mb-lg-0">
             <h1 className="display-4 fw-bold mb-3 mb-md-4">
               당신의 감정을<br className="d-none d-sm-block" />

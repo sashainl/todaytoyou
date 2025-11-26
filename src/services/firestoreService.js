@@ -94,13 +94,8 @@ export async function createDiary(userId, diaryData) {
     const { date, title, mood, content, aiComfort, personality, includeVector = true } = diaryData
 
     // 유효성 검사
-    if (!date || !mood || !content) {
-      throw new Error('date, mood, and content are required')
-    }
-
-    const validMoods = ['매우 좋음', '좋음', '보통', '안 좋음', '매우 안 좋음']
-    if (!validMoods.includes(mood)) {
-      throw new Error('Invalid mood value')
+    if (!date || !content) {
+      throw new Error('date and content are required')
     }
 
     if (content.length > 500) {
@@ -111,9 +106,22 @@ export async function createDiary(userId, diaryData) {
     const newDiary = {
       date,
       title: title || '',
-      mood,
       content,
       createdAt: Timestamp.now()
+    }
+
+    const validMoods = ['매우 좋음', '좋음', '보통', '안 좋음', '매우 안 좋음']
+    if (typeof mood === 'string') {
+      const cleanedMood = mood.trim()
+      if (validMoods.includes(cleanedMood)) {
+        newDiary.mood = cleanedMood
+      } else if (cleanedMood.length > 0) {
+        console.warn('Invalid mood value, skipping save:', cleanedMood)
+      }
+    }
+
+    if (!newDiary.mood) {
+      newDiary.mood = '보통'
     }
 
     // 캐릭터 정보 저장 (일기 작성 시 선택한 캐릭터)
@@ -167,10 +175,16 @@ export async function updateDiary(userId, diaryId, updates) {
     const diaryRef = doc(db, 'users', userId, 'diaries', diaryId)
     
     // 유효성 검사
-    if (updates.mood) {
+    if (Object.prototype.hasOwnProperty.call(updates, 'mood')) {
       const validMoods = ['매우 좋음', '좋음', '보통', '안 좋음', '매우 안 좋음']
-      if (!validMoods.includes(updates.mood)) {
-        throw new Error('Invalid mood value')
+      if (typeof updates.mood === 'string' && updates.mood.trim().length > 0) {
+        const cleanedMood = updates.mood.trim()
+        if (!validMoods.includes(cleanedMood)) {
+          throw new Error('Invalid mood value')
+        }
+        updates.mood = cleanedMood
+      } else {
+        delete updates.mood
       }
     }
 

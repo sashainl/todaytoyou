@@ -4,6 +4,24 @@ import { useLocalStorage } from '../hooks/useLocalStorage'
 import { getDiaries, createDiary, updateDiary, deleteDiary as deleteDiaryFromFirestore } from '../services/firestoreService'
 import { getAIResponse } from '../services/openRouterService'
 
+const MOOD_EMOJIS = {
+  '매우 좋음': '😄',
+  '좋음': '😊',
+  '보통': '😐',
+  '안 좋음': '😔',
+  '매우 안 좋음': '😢'
+}
+
+const MOOD_COLORS = {
+  '매우 좋음': '#10b981',
+  '좋음': '#3b82f6',
+  '보통': '#6b7280',
+  '안 좋음': '#f59e0b',
+  '매우 안 좋음': '#ef4444'
+}
+
+const MOOD_OPTIONS = Object.keys(MOOD_EMOJIS)
+
 export default function Diary() {
   const { user, isAuthenticated } = useAuth()
   const [diaries, setDiaries] = useState([])
@@ -19,7 +37,6 @@ export default function Diary() {
 
   const [formData, setFormData] = useState({
     date: getTodayDateString(),
-    mood: '보통',
     content: ''
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -109,21 +126,33 @@ export default function Diary() {
     }
   }
 
-  const moodEmojis = {
-    '매우 좋음': '😄',
-    '좋음': '😊',
-    '보통': '😐',
-    '안 좋음': '😔',
-    '매우 안 좋음': '😢'
-  }
+  const detectMoodFromContent = useCallback(async (content) => {
+    if (!content || !content.trim()) return null
 
-  const moodColors = {
-    '매우 좋음': '#10b981',
-    '좋음': '#3b82f6',
-    '보통': '#6b7280',
-    '안 좋음': '#f59e0b',
-    '매우 안 좋음': '#ef4444'
-  }
+    const analysisPrompt = `다음 일기의 전반적인 감정을 아래 다섯 가지 중 하나로만 답해주세요. 반드시 해당 단어 하나만 반환하세요.
+
+일기 내용:
+"${content.trim()}"
+
+가능한 답변: 매우 좋음, 좋음, 보통, 안 좋음, 매우 안 좋음
+
+정확히 위 단어 중 하나만 답변하고, 다른 말은 덧붙이지 마세요.`
+
+    try {
+      const response = await getAIResponse(analysisPrompt, selectedPersonality)
+      if (!response) return null
+
+      const normalized = response.replace(/[\s"']/g, '').trim()
+      const detected = MOOD_OPTIONS.find(option => {
+        const normalizedOption = option.replace(/\s/g, '')
+        return normalized.includes(normalizedOption)
+      })
+      return detected || null
+    } catch (error) {
+      console.error('Mood detection failed:', error)
+      return null
+    }
+  }, [selectedPersonality])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -135,8 +164,11 @@ export default function Diary() {
     
     setIsLoading(true)
     try {
+      const detectedMood = await detectMoodFromContent(formData.content)
+      const moodForStorage = detectedMood || '보통'
+
       // AI에게 위로 메시지 받기 (전체 일기 내용을 바탕으로)
-      const prompt = `오늘 기분이 "${formData.mood}"이고, 이런 일기를 썼어:
+      const prompt = `오늘 기분이 "${moodForStorage}"이고, 이런 일기를 썼어:
 
 "${formData.content}"
 
@@ -157,7 +189,7 @@ export default function Diary() {
       const newDiary = await createDiary(user.uid, {
         date: formData.date,
         title: '',
-        mood: formData.mood,
+        mood: moodForStorage,
         content: formData.content,
         aiComfort: aiComfort, // AI 위로 메시지 저장 (임베딩 없이)
         personality: selectedPersonality // 일기 작성 시 선택한 캐릭터 저장
@@ -168,14 +200,15 @@ export default function Diary() {
       const formattedDiary = {
         ...newDiary,
         date: formData.date,
+        mood: moodForStorage,
         aiComfort: aiComfort,
         createdAt: newDiary.createdAt?.toDate ? newDiary.createdAt.toDate().toISOString() : new Date().toISOString()
       }
-      setDiaries([formattedDiary, ...diaries])
+      setDiaries(prev => [formattedDiary, ...prev])
       
       // AI 응답이 있으면 모달 표시
       if (aiComfort) {
-        showComfortModal(aiComfort, formData.mood)
+        showComfortModal(aiComfort, { mood: moodForStorage, personalityKey: selectedPersonality })
       } else {
         showToast('일기가 저장되었습니다! 💝')
       }
@@ -188,13 +221,15 @@ export default function Diary() {
     
     setFormData({
       date: getTodayDateString(),
-      mood: '보통',
       content: ''
     })
   }
 
-  const showComfortModal = (message, mood) => {
-    const moodColor = moodColors[mood]
+  const showComfortModal = (message, options = {}) => {
+    const { mood = null, personalityKey = selectedPersonality } = options
+    const fallbackColor = personalities[personalityKey]?.color || '#6366f1'
+    const moodColor = mood && MOOD_COLORS[mood] ? MOOD_COLORS[mood] : fallbackColor
+    const moodEmoji = mood && MOOD_EMOJIS[mood] ? MOOD_EMOJIS[mood] : (personalities[personalityKey]?.icon || '💖')
     const modalHTML = `
       <div class="modal fade" id="comfortModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -207,7 +242,7 @@ export default function Diary() {
             </div>
             <div class="modal-body p-4">
               <div class="text-center mb-3">
-                <div style="font-size: 3rem;">${moodEmojis[mood]}</div>
+                <div style="font-size: 3rem;">${moodEmoji}</div>
               </div>
               <div style="white-space: pre-wrap; line-height: 1.8; font-size: 1.05rem;">
                 ${message}
@@ -239,6 +274,18 @@ export default function Diary() {
   }
 
   const showDiaryDetail = (diary) => {
+    const personalityInfo = diary.personality ? personalities[diary.personality] : null
+    const displayColor = diary.mood && MOOD_COLORS[diary.mood] ? MOOD_COLORS[diary.mood] : (personalityInfo?.color || '#6366f1')
+    const displayBadge = diary.mood
+      ? `<span class="badge bg-primary" style="background-color: ${displayColor} !important;">
+            ${MOOD_EMOJIS[diary.mood] || '💖'} ${diary.mood}
+         </span>`
+      : personalityInfo
+        ? `<span class="badge bg-secondary" style="background-color: ${personalityInfo.color} !important;">
+             ${personalityInfo.icon} ${personalityInfo.name}
+           </span>`
+        : ''
+
     const modalHTML = `
       <div class="modal fade" id="diaryModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -250,19 +297,15 @@ export default function Diary() {
               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-              <div class="mb-3">
-                <span class="badge bg-primary">
-                  ${moodEmojis[diary.mood]} ${diary.mood}
-                </span>
-              </div>
+              ${displayBadge ? `<div class="mb-3">${displayBadge}</div>` : ''}
               <div class="border-start border-4 border-primary ps-3 mb-4">
                 <p style="white-space: pre-wrap; line-height: 1.8;">${diary.content}</p>
               </div>
               ${diary.aiComfort ? `
-              <div class="ai-comfort-section mt-4 p-3 rounded" style="background: linear-gradient(135deg, ${moodColors[diary.mood]}15 0%, ${moodColors[diary.mood]}05 100%); border-left: 3px solid ${moodColors[diary.mood]};">
+              <div class="ai-comfort-section mt-4 p-3 rounded" style="background: linear-gradient(135deg, ${displayColor}15 0%, ${displayColor}05 100%); border-left: 3px solid ${displayColor};">
                 <div class="d-flex align-items-center mb-2">
-                  <i class="bi bi-heart-fill me-2" style="color: ${moodColors[diary.mood]}"></i>
-                  <h6 class="mb-0" style="color: ${moodColors[diary.mood]}">AI의 위로</h6>
+                  <i class="bi bi-heart-fill me-2" style="color: ${displayColor}"></i>
+                  <h6 class="mb-0" style="color: ${displayColor}">AI의 위로</h6>
                 </div>
                 <p style="white-space: pre-wrap; line-height: 1.8; margin: 0;">${diary.aiComfort}</p>
               </div>
@@ -372,34 +415,6 @@ export default function Diary() {
                   />
                 </div>
 
-                <!-- 기분 선택 -->
-                <div class="mb-4">
-                  <label class="form-label fw-bold">오늘의 기분</label>
-                  <div class="mood-selector-grid">
-                    ${Object.keys(moodEmojis).map(mood => {
-                      const escapedMood = escapeHtml(mood)
-                      const moodClass = mood === '매우 좋음' ? 'excellent' : mood === '좋음' ? 'good' : mood === '보통' ? 'normal' : mood === '안 좋음' ? 'bad' : 'terrible'
-                      return `
-                      <div class="mood-option">
-                        <input 
-                          type="radio" 
-                          class="mood-radio" 
-                          name="editMood" 
-                          id="editMood-${escapedMood}"
-                          value="${escapedMood}"
-                          ${diary.mood === mood ? 'checked' : ''}
-                          required
-                        />
-                        <label htmlFor="editMood-${escapedMood}" class="mood-label mood-${moodClass}">
-                          <span class="mood-emoji">${moodEmojis[mood]}</span>
-                          <span class="mood-text">${escapedMood}</span>
-                        </label>
-                      </div>
-                    `
-                    }).join('')}
-                  </div>
-                </div>
-                
                 <!-- 일기 내용 -->
                 <div class="mb-4">
                   <label class="form-label fw-bold">일기 내용</label>
@@ -474,11 +489,16 @@ export default function Diary() {
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>수정 중...'
     
     try {
+      const diary = diaries.find(d => d.id === diaryId)
+      if (!diary) {
+        showToast('일기를 찾을 수 없습니다.')
+        return
+      }
+
       const date = document.getElementById('editDiaryDate').value
-      const mood = document.querySelector('input[name="editMood"]:checked').value
       const content = document.getElementById('editDiaryContent').value.trim()
       
-      if (!date || !mood || !content) {
+      if (!date || !content) {
         showToast('모든 필드를 입력해주세요.')
         return
       }
@@ -487,9 +507,12 @@ export default function Diary() {
         showToast('일기 내용은 500자 이하여야 합니다.')
         return
       }
+
+      const detectedMood = await detectMoodFromContent(content)
+      const finalMood = detectedMood || diary.mood || '보통'
       
       // AI에게 새로운 위로 메시지 받기 (전체 일기 내용을 바탕으로)
-      const prompt = `오늘 기분이 "${mood}"이고, 이런 일기를 썼어:
+      const prompt = `오늘 기분이 "${finalMood}"이고, 이런 일기를 썼어:
 
 "${content}"
 
@@ -508,8 +531,11 @@ export default function Diary() {
       // 일기 수정 (새로운 AI 위로 메시지 포함)
       const updateData = {
         date,
-        mood,
         content
+      }
+
+      if (finalMood) {
+        updateData.mood = finalMood
       }
       
       // AI 위로 메시지가 있으면 포함
@@ -534,6 +560,7 @@ export default function Diary() {
       const updatedDiaryWithFormat = {
         ...updatedDiary,
         date,
+        mood: finalMood,
         aiComfort: aiComfort || updatedDiary.aiComfort || null,
         createdAt: updatedDiary.createdAt?.toDate 
           ? updatedDiary.createdAt.toDate().toISOString() 
@@ -542,7 +569,7 @@ export default function Diary() {
             : updatedDiary.createdAt)
       }
       
-      setDiaries(diaries.map(d => d.id === diaryId ? updatedDiaryWithFormat : d))
+      setDiaries(prev => prev.map(d => d.id === diaryId ? updatedDiaryWithFormat : d))
       
       // 모달 닫기
       const modal = window.bootstrap.Modal.getInstance(document.getElementById('editDiaryModal'))
@@ -550,7 +577,7 @@ export default function Diary() {
       
       // AI 응답이 있으면 모달 표시
       if (aiComfort) {
-        showComfortModal(aiComfort, mood)
+        showComfortModal(aiComfort, { mood: finalMood, personalityKey: diary.personality || selectedPersonality })
       } else {
         showToast('일기가 수정되었습니다! 💝')
       }
@@ -639,7 +666,7 @@ export default function Diary() {
 
     setIsLoading(true)
     
-    const moods = ['매우 좋음', '좋음', '보통', '안 좋음', '매우 안 좋음']
+    const fallbackMoods = ['매우 좋음', '좋음', '보통', '안 좋음', '매우 안 좋음']
     const sampleContents = [
       '오늘은 날씨가 좋아서 기분이 좋았다. 산책을 하면서 마음이 편안해졌다. 하루 종일 긍정적인 에너지가 느껴졌다.',
       '친구들과 만나서 즐거운 시간을 보냈다. 오랜만에 웃음이 많았고, 좋은 대화를 나눌 수 있어서 행복했다.',
@@ -664,12 +691,15 @@ export default function Diary() {
         const day = String(date.getDate()).padStart(2, '0')
         const dateString = `${year}-${month}-${day}`
 
-        const randomMood = moods[Math.floor(Math.random() * moods.length)]
+        const randomMood = fallbackMoods[Math.floor(Math.random() * fallbackMoods.length)]
         const content = sampleContents[i] || sampleContents[Math.floor(Math.random() * sampleContents.length)]
 
         try {
+          const detectedMood = await detectMoodFromContent(content)
+          const moodForEntry = detectedMood || randomMood
+
           // AI에게 위로 메시지 받기
-          const prompt = `오늘 기분이 "${randomMood}"이고, 이런 일기를 썼어:
+          const prompt = `오늘 기분이 "${moodForEntry}"이고, 이런 일기를 썼어:
 
 "${content}"
 
@@ -689,7 +719,7 @@ export default function Diary() {
           const newDiary = await createDiary(user.uid, {
             date: dateString,
             title: '',
-            mood: randomMood,
+            mood: moodForEntry,
             content: content,
             aiComfort: aiComfort, // AI 위로 메시지 저장
             personality: selectedPersonality,
@@ -760,7 +790,7 @@ export default function Diary() {
     } finally {
       setIsLoading(false)
     }
-  }, [isAuthenticated, user, selectedPersonality])
+  }, [isAuthenticated, user, selectedPersonality, detectMoodFromContent])
 
 
   return (
@@ -847,31 +877,6 @@ export default function Diary() {
                   </div>
                 </div>
                 
-                <div className="mb-4">
-                  <label className="form-label-custom mb-3">
-                    <i className="bi bi-emoji-smile me-2"></i>
-                    오늘의 기분은 어떠셨나요?
-                  </label>
-                  <div className="mood-selector-grid">
-                    {Object.keys(moodEmojis).map(mood => (
-                      <div key={mood} className="mood-option">
-                        <input 
-                          type="radio" 
-                          className="mood-radio" 
-                          name="mood" 
-                          id={`mood-${mood}`}
-                          value={mood}
-                          checked={formData.mood === mood}
-                          onChange={(e) => setFormData({...formData, mood: e.target.value})}
-                        />
-                        <label htmlFor={`mood-${mood}`} className={`mood-label mood-${mood === '매우 좋음' ? 'excellent' : mood === '좋음' ? 'good' : mood === '보통' ? 'normal' : mood === '안 좋음' ? 'bad' : 'terrible'}`}>
-                          <span className="mood-emoji">{moodEmojis[mood]}</span>
-                          <span className="mood-text">{mood}</span>
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
                 
                 <div className="mb-4">
                   <label className="form-label-custom mb-3">
@@ -942,29 +947,7 @@ export default function Diary() {
                       <p className="empty-text">로그인이 필요합니다</p>
                       <small className="empty-subtext">일기를 작성하려면 로그인해주세요</small>
                     </div>
-                  ) : (
-                    <div className="mb-3">
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary w-100"
-                        onClick={createWeekDiaries}
-                        disabled={isLoading}
-                        style={{ fontSize: '0.85rem' }}
-                      >
-                        {isLoading ? (
-                          <>
-                            <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                            생성 중...
-                          </>
-                        ) : (
-                          <>
-                            <i className="bi bi-magic me-2"></i>
-                            1주치 일기 생성 (테스트용)
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
+                  ) : null}
                   {!isAuthenticated ? null : isLoadingDiaries ? (
                     <div className="text-center py-4">
                       <div className="spinner-border text-primary" role="status">
@@ -980,35 +963,44 @@ export default function Diary() {
                       <small className="empty-subtext">첫 번째 일기를 작성해보세요</small>
                     </div>
                   ) : (
-                    diaries.slice(0, 5).map(diary => (
-                      <div 
-                        key={diary.id} 
-                        className="diary-list-item" 
-                        onClick={() => showDiaryDetail(diary)}
-                        style={{ cursor: 'pointer' }}
-                      >
+                    diaries.slice(0, 5).map(diary => {
+                      const indicatorColor = diary.mood && MOOD_COLORS[diary.mood]
+                        ? MOOD_COLORS[diary.mood]
+                        : ((diary.personality && personalities[diary.personality]?.color) || '#6b7280')
+                      const indicatorIcon = diary.mood
+                        ? (MOOD_EMOJIS[diary.mood] || '💖')
+                        : (diary.personality ? personalities[diary.personality]?.icon : '💬')
+
+                      return (
                         <div 
-                          className="diary-item-mood-indicator" 
-                          style={{ 
-                            background: `${moodColors[diary.mood]}20`, 
-                            borderLeftColor: moodColors[diary.mood] 
-                          }}
+                          key={diary.id} 
+                          className="diary-list-item" 
+                          onClick={() => showDiaryDetail(diary)}
+                          style={{ cursor: 'pointer' }}
                         >
-                          <span className="mood-emoji-small">{moodEmojis[diary.mood]}</span>
+                          <div 
+                            className="diary-item-mood-indicator" 
+                            style={{ 
+                              background: `${indicatorColor}20`, 
+                              borderLeftColor: indicatorColor 
+                            }}
+                          >
+                            <span className="mood-emoji-small">{indicatorIcon}</span>
+                          </div>
+                          <div className="diary-item-content">
+                            <p className="diary-item-date mb-2">
+                              <i className="bi bi-calendar3 me-1"></i>{formatDate(diary.date)}
+                            </p>
+                            <p className="diary-item-preview">
+                              {diary.content.substring(0, 60)}{diary.content.length > 60 ? '...' : ''}
+                            </p>
+                          </div>
+                          <div className="diary-item-action">
+                            <i className="bi bi-chevron-right"></i>
+                          </div>
                         </div>
-                        <div className="diary-item-content">
-                          <p className="diary-item-date mb-2">
-                            <i className="bi bi-calendar3 me-1"></i>{formatDate(diary.date)}
-                          </p>
-                          <p className="diary-item-preview">
-                            {diary.content.substring(0, 60)}{diary.content.length > 60 ? '...' : ''}
-                          </p>
-                        </div>
-                        <div className="diary-item-action">
-                          <i className="bi bi-chevron-right"></i>
-                        </div>
-                      </div>
-                    ))
+                      )
+                    })
                   )}
                 </div>
               </div>

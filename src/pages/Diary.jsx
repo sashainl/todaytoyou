@@ -127,29 +127,77 @@ export default function Diary() {
   }
 
   const detectMoodFromContent = useCallback(async (content) => {
-    if (!content || !content.trim()) return null
+    if (!content || !content.trim()) {
+      console.log('Mood detection: Empty content')
+      return null
+    }
 
-    const analysisPrompt = `다음 일기의 전반적인 감정을 아래 다섯 가지 중 하나로만 답해주세요. 반드시 해당 단어 하나만 반환하세요.
+    const analysisPrompt = `다음 일기 내용을 분석하여 사용자의 감정 상태를 파악해주세요.
 
 일기 내용:
 "${content.trim()}"
 
-가능한 답변: 매우 좋음, 좋음, 보통, 안 좋음, 매우 안 좋음
+위 일기의 전반적인 감정을 다음 다섯 가지 중 정확히 하나로만 분류해주세요:
+1. 매우 좋음
+2. 좋음
+3. 보통
+4. 안 좋음
+5. 매우 안 좋음
 
-정확히 위 단어 중 하나만 답변하고, 다른 말은 덧붙이지 마세요.`
+중요: 반드시 위 다섯 가지 중 하나의 정확한 단어만 답변하세요. 예를 들어 "매우 좋음", "좋음", "보통", "안 좋음", "매우 안 좋음" 중 하나만 답변하고, 다른 설명이나 문장은 추가하지 마세요.`
 
     try {
+      console.log('Mood detection 시작, 일기 내용 길이:', content.trim().length)
       const response = await getAIResponse(analysisPrompt, selectedPersonality)
-      if (!response) return null
+      
+      if (!response) {
+        console.log('Mood detection: AI 응답 없음')
+        return null
+      }
 
-      const normalized = response.replace(/[\s"']/g, '').trim()
-      const detected = MOOD_OPTIONS.find(option => {
-        const normalizedOption = option.replace(/\s/g, '')
-        return normalized.includes(normalizedOption)
+      console.log('Mood detection: AI 원본 응답:', response)
+
+      // 여러 방법으로 mood 매칭 시도
+      const responseLower = response.toLowerCase().trim()
+      const responseNormalized = response.replace(/[\s"'.，。]/g, '').trim()
+      
+      // 직접 매칭 시도
+      let detected = MOOD_OPTIONS.find(option => {
+        const optionLower = option.toLowerCase()
+        const optionNormalized = option.replace(/\s/g, '')
+        return responseLower.includes(optionLower) || 
+               responseNormalized.includes(optionNormalized) ||
+               response.includes(option)
       })
-      return detected || null
+
+      // 부분 매칭 시도 (더 유연한 매칭)
+      if (!detected) {
+        const moodKeywords = {
+          '매우 좋음': ['매우좋음', '매우 좋', '아주 좋', '정말 좋', '완전 좋', '최고'],
+          '좋음': ['좋음', '좋아', '기쁨', '행복', '만족'],
+          '보통': ['보통', '평범', '그저그', '무난'],
+          '안 좋음': ['안좋음', '안 좋', '나쁨', '슬픔', '우울', '불안'],
+          '매우 안 좋음': ['매우안좋음', '매우 안 좋', '아주 나쁨', '최악', '심각']
+        }
+
+        for (const [mood, keywords] of Object.entries(moodKeywords)) {
+          if (keywords.some(keyword => responseNormalized.includes(keyword))) {
+            detected = mood
+            console.log('Mood detection: 키워드 매칭으로 감지:', mood)
+            break
+          }
+        }
+      }
+
+      if (detected) {
+        console.log('Mood detection 성공:', detected)
+        return detected
+      } else {
+        console.warn('Mood detection 실패: 매칭되는 mood 없음, 응답:', response)
+        return null
+      }
     } catch (error) {
-      console.error('Mood detection failed:', error)
+      console.error('Mood detection 에러:', error)
       return null
     }
   }, [selectedPersonality])
@@ -166,6 +214,7 @@ export default function Diary() {
     try {
       const detectedMood = await detectMoodFromContent(formData.content)
       const moodForStorage = detectedMood || '보통'
+      console.log('감지된 mood:', detectedMood, '저장할 mood:', moodForStorage)
 
       // AI에게 위로 메시지 받기 (전체 일기 내용을 바탕으로)
       const prompt = `오늘 기분이 "${moodForStorage}"이고, 이런 일기를 썼어:
@@ -185,7 +234,7 @@ export default function Diary() {
       }
       
       // Firestore에 일기 저장 (AI 위로 메시지 포함)
-      console.log('일기 저장 시작, aiComfort:', aiComfort ? aiComfort.substring(0, 50) + '...' : 'null')
+      console.log('일기 저장 시작, mood:', moodForStorage, 'aiComfort:', aiComfort ? aiComfort.substring(0, 50) + '...' : 'null')
       const newDiary = await createDiary(user.uid, {
         date: formData.date,
         title: '',
@@ -510,6 +559,7 @@ export default function Diary() {
 
       const detectedMood = await detectMoodFromContent(content)
       const finalMood = detectedMood || diary.mood || '보통'
+      console.log('일기 수정 - 감지된 mood:', detectedMood, '기존 mood:', diary.mood, '최종 mood:', finalMood)
       
       // AI에게 새로운 위로 메시지 받기 (전체 일기 내용을 바탕으로)
       const prompt = `오늘 기분이 "${finalMood}"이고, 이런 일기를 썼어:

@@ -111,16 +111,33 @@ export async function createDiary(userId, diaryData) {
     }
 
     const validMoods = ['매우 좋음', '좋음', '보통', '안 좋음', '매우 안 좋음']
-    if (typeof mood === 'string') {
-      const cleanedMood = mood.trim()
-      if (validMoods.includes(cleanedMood)) {
-        newDiary.mood = cleanedMood
-      } else if (cleanedMood.length > 0) {
-        console.warn('Invalid mood value, skipping save:', cleanedMood)
+    
+    // mood 처리: 전달된 값이 있으면 검증 후 저장, 없으면 기본값 설정
+    if (mood !== undefined && mood !== null) {
+      if (typeof mood === 'string') {
+        const cleanedMood = mood.trim()
+        if (cleanedMood && validMoods.includes(cleanedMood)) {
+          newDiary.mood = cleanedMood
+          console.log('Mood 저장:', cleanedMood)
+        } else if (cleanedMood.length > 0) {
+          console.warn('Invalid mood value, using default:', cleanedMood)
+          newDiary.mood = '보통'
+        } else {
+          console.log('Empty mood string, using default')
+          newDiary.mood = '보통'
+        }
+      } else {
+        console.warn('Mood is not a string, using default:', typeof mood, mood)
+        newDiary.mood = '보통'
       }
+    } else {
+      console.log('Mood not provided, using default')
+      newDiary.mood = '보통'
     }
-
-    if (!newDiary.mood) {
+    
+    // 최종 확인: mood가 반드시 설정되도록 보장
+    if (!newDiary.mood || !validMoods.includes(newDiary.mood)) {
+      console.warn('Mood validation failed, forcing default. Current value:', newDiary.mood)
       newDiary.mood = '보통'
     }
 
@@ -177,14 +194,30 @@ export async function updateDiary(userId, diaryId, updates) {
     // 유효성 검사
     if (Object.prototype.hasOwnProperty.call(updates, 'mood')) {
       const validMoods = ['매우 좋음', '좋음', '보통', '안 좋음', '매우 안 좋음']
-      if (typeof updates.mood === 'string' && updates.mood.trim().length > 0) {
-        const cleanedMood = updates.mood.trim()
-        if (!validMoods.includes(cleanedMood)) {
-          throw new Error('Invalid mood value')
+      if (updates.mood !== undefined && updates.mood !== null) {
+        if (typeof updates.mood === 'string' && updates.mood.trim().length > 0) {
+          const cleanedMood = updates.mood.trim()
+          if (validMoods.includes(cleanedMood)) {
+            updates.mood = cleanedMood
+            console.log('Mood 업데이트:', cleanedMood)
+          } else {
+            console.warn('Invalid mood value in update, using default:', cleanedMood)
+            updates.mood = '보통'
+          }
+        } else {
+          console.log('Empty or invalid mood in update, using default')
+          updates.mood = '보통'
         }
-        updates.mood = cleanedMood
       } else {
-        delete updates.mood
+        // mood가 null이나 undefined면 기본값 설정
+        console.log('Mood is null/undefined in update, using default')
+        updates.mood = '보통'
+      }
+      
+      // 최종 확인
+      if (!updates.mood || !validMoods.includes(updates.mood)) {
+        console.warn('Mood validation failed in update, forcing default. Current value:', updates.mood)
+        updates.mood = '보통'
       }
     }
 

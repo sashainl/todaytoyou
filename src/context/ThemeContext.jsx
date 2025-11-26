@@ -13,8 +13,8 @@ export function useTheme() {
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme')
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    return savedTheme || (systemPrefersDark ? 'dark' : 'light')
+    // 기본값을 항상 'light'로 설정
+    return savedTheme || 'light'
   })
 
   useEffect(() => {
